@@ -1,0 +1,9 @@
+coverage
+httpretty==0.8.6
+nose
+nose-exclude
+pep8
+requests
+requests-mock
+responses
+six
