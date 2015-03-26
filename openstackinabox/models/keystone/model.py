@@ -4,6 +4,7 @@ OpenStack Keystone Model
 import datetime
 import logging
 import random
+import re
 import sqlite3
 import uuid
 
@@ -44,8 +45,8 @@ schema = [
             userid INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL,
             email TEXT NOT NULL,
-            password TEXT NOT NULL,
-            apikey TEXT NOT NULL,
+            password TEXT,
+            apikey TEXT,
             enabled INTEGER DEFAULT 1
         )
     ''',
@@ -320,6 +321,30 @@ class KeystoneModel(object):
 
         self.database.commit()
 
+
+    def validate_username(self, username):
+        regex = re.compile('^[a-zA-Z]+[\w\.@-]*$')
+        if regex.match(username) is None:
+            return False
+
+        return True
+
+    def validate_password(self, password):
+        regexes = [
+            re.compile('^[a-zA-Z]+[\w\.@-]*$'),
+            re.compile('[\w\W]*[A-Z]+'),
+            re.compile('[\w\W]*[a-z]+'),
+            re.compile('[\w\W]*[0-9]+')
+        ]
+
+        for regex in regexes:
+            if regex.match(password) is None:
+                logger.debug('password validation failed regex {0}'
+                             .format(regex.pattern))
+                return False
+
+        return True
+
     def get_admin_token(self):
         return self.__admin_token
 
@@ -343,6 +368,10 @@ class KeystoneModel(object):
                 'Unable to retrieve tenantid for newly created tenant')
 
         tenantid = tenant_data[0]
+
+        logger.debug('Added tenant {0} with id {1}'
+                     .format(tenantname, tenantid))
+
         return tenantid
 
     def get_tenants(self):
@@ -435,6 +464,10 @@ class KeystoneModel(object):
             raise KeystoneUserError('Unable to add user')
 
         userid = user_data[0]
+
+        logger.debug('Added user {1} with user id {2} to tenant id {0}'
+                     .format(tenantid, username, userid))
+
         return userid
 
     def get_user_by_id(self, tenantid=None, userid=None):
