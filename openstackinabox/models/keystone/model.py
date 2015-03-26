@@ -266,6 +266,7 @@ class KeystoneRoleError(KeystoneError):
 class KeystoneModel(object):
 
     IDENTITY_ADMIN_ROLE = 'identity:user-admin'
+    IDENTITY_VIEWER_ROLE = 'identity:observer'
 
     def __init__(self):
         self.__admin_token = 'adminstrate_with_this_{0}'.format(uuid.uuid4())
@@ -301,11 +302,17 @@ class KeystoneModel(object):
                                              'system@stackinabox',
                                              'stackinabox',
                                              '537461636b496e41426f78')
-        role_data = self.add_role(KeystoneModel.IDENTITY_ADMIN_ROLE)
-        self.__admin_role_id = role_data['roleid']
-        self.add_user_role_by_roleid(self.__admin_tenant_id,
-                                     self.__admin_user_id,
-                                     self.__admin_role_id)
+        roles = [
+            KeystoneModel.IDENTITY_ADMIN_ROLE,
+            KeystoneModel.IDENTITY_VIEWER_ROLE,
+        ]
+        for role in roles:
+            role_data = self.add_role(role)
+            if role == KeystoneModel.IDENTITY_ADMIN_ROLE:
+                self.__admin_role_id = role_data['roleid']
+                self.add_user_role_by_roleid(self.__admin_tenant_id,
+                                             self.__admin_user_id,
+                                             self.__admin_role_id)
 
         self.add_token(self.__admin_tenant_id,
                        self.__admin_user_id,

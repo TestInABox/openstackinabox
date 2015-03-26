@@ -105,20 +105,16 @@ class KeystoneV2Service(StackInABoxService):
                 user_data = self.model.validate_token_admin(
                     req_headers['x-auth-token'])
 
-                if user_data:
-                    logger.debug('KeystoneV2Service({0}): Token Valid for '
-                                 'tenantid {1}'
-                                 .format(self.__id, user_data['tenantid']))
-                    response_body = {
-                        'users': [user_data_filter(user_info)
-                                  for user_info in
-                                  self.model.get_users_for_tenant_id(
-                                      user_data['tenantid'])]
-                    }
-                    return (200, headers, json.dumps(response_body))
-
-                else:
-                    return (200, headers, json.dumps({'users': []}))
+                logger.debug('KeystoneV2Service({0}): Token Valid for '
+                             'tenantid {1}'
+                             .format(self.__id, user_data['tenantid']))
+                response_body = {
+                    'users': [user_data_filter(user_info)
+                              for user_info in
+                              self.model.get_users_for_tenant_id(
+                                  user_data['tenantid'])]
+                }
+                return (200, headers, json.dumps(response_body))
 
             except Exception as ex:
                 logger.exception('User List Failure')
