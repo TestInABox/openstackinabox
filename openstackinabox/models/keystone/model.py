@@ -2,7 +2,6 @@
 OpenStack Keystone Model
 """
 import datetime
-import logging
 import random
 import re
 import sqlite3
@@ -10,9 +9,6 @@ import uuid
 
 
 from openstackinabox.models.base_model import *
-
-
-logger = logging.getLogger(__name__)
 
 
 """

@@ -2,21 +2,17 @@
 OpenStack Keystone v2 Service
 """
 import json
-import logging
 import re
 import uuid
 
 import six
 from six.moves.urllib import parse
-from stackinabox.services.service import StackInABoxService
 
 from openstackinabox.models.keystone import KeystoneModel
+from openstackinabox.services.base_service import BaseService
 
 
-logger = logging.getLogger(__name__)
-
-
-class KeystoneV2Service(StackInABoxService):
+class KeystoneV2Service(BaseService):
 
     # USER_ID_PATH_REGEX = re.compile('^\/users\/[a-zA-Z]+[\w\.@-]*$')
     USER_ID_PATH_REGEX = re.compile('^\/users\/([0-9]+)$')
@@ -26,35 +22,19 @@ class KeystoneV2Service(StackInABoxService):
         self.log_info('initializing keystone v2.0 services...')
         self.__model = KeystoneModel()
 
-        self.register(StackInABoxService.GET,
+        self.register(BaseService.GET,
                       '/tenants',
                       KeystoneV2Service.handle_list_tenants)
-        self.register(StackInABoxService.GET,
+        self.register(BaseService.GET,
                       '/users',
                       KeystoneV2Service.handle_list_users)
-        self.register(StackInABoxService.POST,
+        self.register(BaseService.POST,
                       '/users',
                       KeystoneV2Service.handle_add_user)
-        self.register(StackInABoxService.GET,
+        self.register(BaseService.GET,
                       KeystoneV2Service.USER_ID_PATH_REGEX,
                       KeystoneV2Service.handle_get_user_by_id)
         self.log_info('initialized')
-
-    def log_debug(self, msg):
-        logger.debug('{0} ({1}): {2}'
-                     .format(self.name, id(self), msg))
-
-    def log_info(self, msg):
-        logger.info('{0} ({1}): {2}'
-                     .format(self.name, id(self), msg))
-
-    def log_exception(self, msg):
-        logger.exception('{0} ({1}): {2}'
-                     .format(self.name, id(self), msg))
-
-    def log_request(self, uri, request):
-        self.log_debug('Received request {0}'.format(uri))
-        self.log_debug('Received headers {0}'.format(request.headers))
 
     @property
     def model(self):
