@@ -2,14 +2,13 @@
 OpenStack Keystone Model
 """
 import datetime
-import logging
 import random
 import re
 import sqlite3
 import uuid
 
 
-logger = logging.getLogger(__name__)
+from openstackinabox.models.base_model import *
 
 
 """
@@ -228,7 +227,7 @@ SQL_GET_ROLES_FOR_USER = '''
 '''
 
 
-class KeystoneError(Exception):
+class KeystoneError(BaseModelExceptions):
     pass
 
 
@@ -264,12 +263,13 @@ class KeystoneRoleError(KeystoneError):
     pass
 
 
-class KeystoneModel(object):
+class KeystoneModel(BaseModel):
 
     IDENTITY_ADMIN_ROLE = 'identity:user-admin'
     IDENTITY_VIEWER_ROLE = 'identity:observer'
 
     def __init__(self):
+        super(KeystoneModel, self).__init__('KeystoneModel')
         self.__admin_token = 'adminstrate_with_this_{0}'.format(uuid.uuid4())
         self.database = sqlite3.connect(':memory:')
         self.init_database()
@@ -291,6 +291,7 @@ class KeystoneModel(object):
         return 0
 
     def init_database(self):
+        self.log_info('Initializing database')
         dbcursor = self.database.cursor()
         for table_sql in schema:
             dbcursor.execute(table_sql)
@@ -320,16 +321,21 @@ class KeystoneModel(object):
                        token=self.__admin_token)
 
         self.database.commit()
+        self.log_info('Database initialized')
 
 
     def validate_username(self, username):
+        self.log_debug('Validating username {0}'.format(username))
         regex = re.compile('^[a-zA-Z]+[\w\.@-]*$')
         if regex.match(username) is None:
+            self.log_debug('Username {0} is INVALID'.format(username))
             return False
 
+        self.log_debug('Username {0} is valid'.format(username))
         return True
 
     def validate_password(self, password):
+        self.log_debug('Validating password {0}'.format(password))
         regexes = [
             re.compile('^[a-zA-Z]+[\w\.@-]*$'),
             re.compile('[\w\W]*[A-Z]+'),
@@ -339,10 +345,11 @@ class KeystoneModel(object):
 
         for regex in regexes:
             if regex.match(password) is None:
-                logger.debug('password validation failed regex {0}'
-                             .format(regex.pattern))
+                self.log_debug('password {1} validation failed regex {0}'
+                               .format(regex.pattern, password))
                 return False
 
+        self.log_debug('password {0} is valid'.format(password))
         return True
 
     def get_admin_token(self):
@@ -369,8 +376,8 @@ class KeystoneModel(object):
 
         tenantid = tenant_data[0]
 
-        logger.debug('Added tenant {0} with id {1}'
-                     .format(tenantname, tenantid))
+        self.log_debug('Added tenant {0} with id {1}'
+                       .format(tenantname, tenantid))
 
         return tenantid
 
@@ -465,8 +472,8 @@ class KeystoneModel(object):
 
         userid = user_data[0]
 
-        logger.debug('Added user {1} with user id {2} to tenant id {0}'
-                     .format(tenantid, username, userid))
+        self.log_debug('Added user {1} with user id {2} to tenant id {0}'
+                       .format(tenantid, username, userid))
 
         return userid
 
@@ -724,29 +731,29 @@ class KeystoneModel(object):
 
     def validate_token_admin(self, token):
         try:
-            logger.debug('Checking token {0} for registration...'
-                         .format(token))
+            self.log_debug('Checking token {0} for registration...'
+                           .format(token))
             user_data = self.validate_token(token)
 
-            logger.debug('Token is valid.')
-            logger.debug('Accessing user credentials for {0}/{1}...'
-                         .format(user_data['tenantid'],
-                                 user_data['userid']))
+            self.log_debug('Token is valid.')
+            self.log_debug('Accessing user credentials for {0}/{1}...'
+                           .format(user_data['tenantid'],
+                                   user_data['userid']))
             user_roles = self.get_roles_for_user(user_data['tenantid'],
                                                  user_data['userid'])
-            logger.debug('User has {0} roles...'
-                         .format(len(user_roles)))
+            self.log_debug('User has {0} roles...'
+                           .format(len(user_roles)))
             for role_data in user_roles:
                 roleid = role_data['roleid']
                 rolename = role_data['rolename']
-                logger.debug('Checking against role {0} - {1}'
-                             .format(roleid, rolename))
+                self.log_debug('Checking against role {0} - {1}'
+                               .format(roleid, rolename))
                 if rolename == KeystoneModel.IDENTITY_ADMIN_ROLE:
-                    logger.debug('User has {0} role'
-                                 .format(KeystoneModel.IDENTITY_ADMIN_ROLE))
+                    self.log_debug('User has {0} role'
+                                   .format(KeystoneModel.IDENTITY_ADMIN_ROLE))
                     return user_data
 
         except Exception as ex:
-            logger.exception('Error: {0}'.format(ex))
+            self.log_exception('Error: {0}'.format(ex))
 
         raise KeystoneInvalidTokenError('Invalid Token')
