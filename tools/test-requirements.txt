@@ -1,4 +1,3 @@
--e git+https://github.com/BenjamenMeyer/stackInABox.git@enhancement_regex_uri_matching#egg=stackinabox_with_regex
 coverage
 httpretty==0.8.6
 nose
