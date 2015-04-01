@@ -237,7 +237,7 @@ class KeystoneV2Service(BaseService):
                 password = json_data['user']['OS-KSADM:password']
             except LookupError:
                 password = None
-           
+
             if password is not None:
                 if not self.model.validate_password(password):
                     self.log_debug('invalid password')
@@ -262,8 +262,8 @@ class KeystoneV2Service(BaseService):
 
     @staticmethod
     def get_user_id_from_path(uri_path):
-        uri_matcher =  KeystoneV2Service.USER_ID_PATH_REGEX.match(uri_path)
-        userid =  uri_matcher.groups()[0]
+        uri_matcher = KeystoneV2Service.USER_ID_PATH_REGEX.match(uri_path)
+        userid = uri_matcher.groups()[0]
         return userid
 
     def handle_get_user_by_id(self, request, uri, headers):
@@ -304,7 +304,7 @@ class KeystoneV2Service(BaseService):
             user_id = KeystoneV2Service.get_user_id_from_path(uri)
             self.log_debug('Lookup of user id {0} requested'
                            .format(user_id))
-        except Exception as ex:  #  pragma: no cover
+        except Exception as ex:  # pragma: no cover
             self.log_exception('Failed to get user id from path')
             return (400, headers, 'bad request')
 

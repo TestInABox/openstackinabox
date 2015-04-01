@@ -31,13 +31,13 @@ class TestKeystoneV2UserListing(unittest.TestCase):
 
     def test_user_listing_no_token(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
-        
+
         res = requests.get('http://localhost/keystone/v2.0/users')
         self.assertEqual(res.status_code, 403)
 
     def test_user_listing_bad_token(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
-        
+
         self.headers['x-auth-token'] = 'new_token'
         res = requests.get('http://localhost/keystone/v2.0/users',
                            headers=self.headers)
@@ -45,9 +45,9 @@ class TestKeystoneV2UserListing(unittest.TestCase):
 
     def test_user_listing(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
-        
+
         neo_tenant_id = self.keystone.model.add_tenant(tenantname='neo',
-                                                         description='The One')
+                                                       description='The One')
         tom = self.keystone.model.add_user(neo_tenant_id,
                                            'tom',
                                            'tom@theone.matrix',
@@ -70,11 +70,11 @@ class TestKeystoneV2UserListing(unittest.TestCase):
         self.assertEqual(len(user_data['users']), 1)
 
         self.keystone.model.add_user(neo_tenant_id,
-                                       'neo',
-                                       'neo@theone.matrix',
-                                       'redpill',
-                                       'iamtheone',
-                                       enabled=True)
+                                     'neo',
+                                     'neo@theone.matrix',
+                                     'redpill',
+                                     'iamtheone',
+                                     enabled=True)
 
         res = requests.get('http://localhost/keystone/v2.0/users',
                            headers=self.headers)
@@ -85,9 +85,9 @@ class TestKeystoneV2UserListing(unittest.TestCase):
 
     def test_user_listing_by_name(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
-        
+
         neo_tenant_id = self.keystone.model.add_tenant(tenantname='neo',
-                                                         description='The One')
+                                                       description='The One')
         tom = self.keystone.model.add_user(neo_tenant_id,
                                            'tom',
                                            'tom@theone.matrix',
@@ -127,9 +127,9 @@ class TestKeystoneV2UserListing(unittest.TestCase):
 
     def test_user_listing_with_invalid_query_param(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
-        
+
         neo_tenant_id = self.keystone.model.add_tenant(tenantname='neo',
-                                                         description='The One')
+                                                       description='The One')
         tom = self.keystone.model.add_user(neo_tenant_id,
                                            'tom',
                                            'tom@theone.matrix',
@@ -144,7 +144,8 @@ class TestKeystoneV2UserListing(unittest.TestCase):
         user_data = self.keystone.model.get_token_by_userid(tom)
 
         self.headers['x-auth-token'] = user_data['token']
-        res = requests.get('http://localhost/keystone/v2.0/users?honesty=False',
+        res = requests.get('http://localhost/keystone/v2.0/users'
+                           '?honesty=False',
                            headers=self.headers)
         self.assertEqual(res.status_code, 200)
         user_data = res.json()
@@ -152,11 +153,11 @@ class TestKeystoneV2UserListing(unittest.TestCase):
         self.assertEqual(len(user_data['users']), 1)
 
         self.keystone.model.add_user(neo_tenant_id,
-                                       'neo',
-                                       'neo@theone.matrix',
-                                       'redpill',
-                                       'iamtheone',
-                                       enabled=True)
+                                     'neo',
+                                     'neo@theone.matrix',
+                                     'redpill',
+                                     'iamtheone',
+                                     enabled=True)
 
         res = requests.get('http://localhost/keystone/v2.0/users',
                            headers=self.headers)
