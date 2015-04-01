@@ -35,8 +35,8 @@ class KeystoneV2Service(BaseService):
 
     @staticmethod
     def get_user_id_from_path(uri_path):
-        uri_matcher =  KeystoneV2Service.USER_ID_PATH_REGEX.match(uri_path)
-        userid =  uri_matcher.groups()[0]
+        uri_matcher = KeystoneV2Service.USER_ID_PATH_REGEX.match(uri_path)
+        userid = uri_matcher.groups()[0]
         return userid
 
     def __init__(self):
@@ -72,10 +72,10 @@ class KeystoneV2Service(BaseService):
         else:
             raise TypeError('model is not an instance of KeystoneModel')
 
-    def helper_validate_token(self, request_headers, enforce_admin, service_admin):
+    def helper_validate_token(self, request_headers,
+                              enforce_admin, service_admin):
         if 'x-auth-token' not in request_headers:
             raise KeystoneV2AuthForbiddenError('no auth token')
-
 
         try:
             auth_token = request_headers['x-auth-token']
@@ -99,7 +99,8 @@ class KeystoneV2Service(BaseService):
 
         return user_data
 
-    def helper_authenticate(self, request_headers, headers, enforce_admin, service_admin):
+    def helper_authenticate(self, request_headers, headers,
+                            enforce_admin, service_admin):
 
         try:
             user_data = self.helper_validate_token(request_headers,
@@ -114,8 +115,7 @@ class KeystoneV2Service(BaseService):
             self.log_exception('invalid or expired token')
             return (401, headers, 'Not Authorized')
 
-        return user_data 
-
+        return user_data
 
     def handle_list_tenants(self, request, uri, headers):
         '''
@@ -178,7 +178,6 @@ class KeystoneV2Service(BaseService):
 
         if len(query) > 0:
             query_data = parse.parse_qs(query)
-
 
             if 'name' in query_data:
                 user_info = self.model.get_user_by_name(
@@ -283,7 +282,7 @@ class KeystoneV2Service(BaseService):
             password = json_data['user']['OS-KSADM:password']
         except LookupError:
             password = None
-       
+
         if password is not None:
             if not self.model.validate_password(password):
                 self.log_debug('invalid password')
@@ -338,7 +337,10 @@ class KeystoneV2Service(BaseService):
         self.log_request(uri, request)
         req_headers = request.headers
 
-        user_data = self.helper_authenticate(req_headers, headers, False, False)
+        user_data = self.helper_authenticate(req_headers,
+                                             headers,
+                                             False,
+                                             False)
         if isinstance(user_data, tuple):
             return user_data
 
@@ -347,7 +349,7 @@ class KeystoneV2Service(BaseService):
             self.log_debug('Lookup of user id {0} requested'
                            .format(user_id))
 
-        except Exception as ex:  #  pragma: no cover
+        except Exception as ex:  # pragma: no cover
             self.log_exception('Failed to get user id from path')
             return (400, headers, 'bad request')
 
@@ -387,7 +389,10 @@ class KeystoneV2Service(BaseService):
         self.log_request(uri, request)
         req_headers = request.headers
 
-        user_data = self.helper_authenticate(req_headers, headers, False, False)
+        user_data = self.helper_authenticate(req_headers,
+                                             headers,
+                                             False,
+                                             False)
         if isinstance(user_data, tuple):
             return user_data
 
@@ -396,7 +401,7 @@ class KeystoneV2Service(BaseService):
             self.log_debug('Lookup of user id {0} requested'
                            .format(user_id))
 
-        except Exception as ex:  #  pragma: no cover
+        except Exception as ex:  # pragma: no cover
             self.log_exception('Failed to get user id from path')
             return (400, headers, 'bad request')
 

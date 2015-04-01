@@ -143,7 +143,10 @@ SQL_GET_USER_BY_USERID = '''
 
 SQL_UPDATE_USER_BY_USERID = '''
     UPDATE keystone_users
-    SET enabled = :enabled, email = :email, password = :password, apikey = :apikey
+    SET enabled = :enabled,
+        email = :email,
+        password = :password,
+        apikey = :apikey
     WHERE tenantid = :tenantid AND
           userid = :userid
 '''
@@ -789,7 +792,8 @@ class KeystoneModel(BaseModel):
                            .format(token))
             user_data = self.validate_token_admin(token)
 
-            self.log_debug('Checking if token {0} is the sole service admin token...'
+            self.log_debug('Checking if token {0} is the sole service admin '
+                           'token...'
                            .format(token))
 
             if token == self.get_admin_token():

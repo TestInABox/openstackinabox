@@ -35,11 +35,13 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
         }
         self.user_info['user']['userid'] =\
             self.keystone.model.add_user(tenantid=self.tenant_id,
-                                         username=self.user_info['user']['username'],
+                                         username=self.user_info['user'][
+                                         'username'],
                                          email=self.user_info['user']['email'],
-                                         password=
-                                         self.user_info['user']['OS-KSADM:password'],
-                                         enabled=self.user_info['user']['enabled'])
+                                         password=self.user_info['user'][
+                                         'OS-KSADM:password'],
+                                         enabled=self.user_info['user'][
+                                         'enabled'])
         self.keystone.model.add_token(self.tenant_id,
                                       self.user_info['user']['userid'])
         StackInABox.register_service(self.keystone)
@@ -59,7 +61,7 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
     def test_user_update_invalid_token(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
         json_data = json.dumps(self.user_info)
-        self.headers['x-auth-token'] = 'new_token' 
+        self.headers['x-auth-token'] = 'new_token'
         res = requests.post('http://localhost/keystone/v2.0/users/{0}'
                             .format(self.user_info['user']['userid']),
                             headers=self.headers,
