@@ -200,7 +200,8 @@ class KeystoneV2Service(BaseService):
     def handle_add_user(self, request, uri, headers):
         '''
         201 -> created
-        400 -> Bad Request - missing one or more element, or values were invalid
+        400 -> Bad Request - missing one or more element, or values were
+                             invalid
         401 -> unauthorized
         403 -> forbidden (no permission)
         404 -> not found

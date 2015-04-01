@@ -330,7 +330,6 @@ class KeystoneModel(BaseModel):
         self.database.commit()
         self.log_info('Database initialized')
 
-
     def validate_username(self, username):
         self.log_debug('Validating username {0}'.format(username))
         regex = re.compile('^[a-zA-Z]+[\w\.@-]*$')

@@ -47,7 +47,7 @@ class TestKeystoneV2UserAdd(unittest.TestCase):
     def test_user_add_invalid_token(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
         json_data = json.dumps(self.user_info)
-        self.headers['x-auth-token'] = 'new_token' 
+        self.headers['x-auth-token'] = 'new_token'
         res = requests.post('http://localhost/keystone/v2.0/users',
                             headers=self.headers,
                             data=json_data)
@@ -56,16 +56,16 @@ class TestKeystoneV2UserAdd(unittest.TestCase):
     def test_user_add_bad_request(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
         neo_tenant_id = self.keystone.model.add_tenant(tenantname='neo',
-                                                         description='The One')
+                                                       description='The One')
         tom = self.keystone.model.add_user(neo_tenant_id,
-                                             'tom',
-                                             'tom@theone.matrix',
-                                             'bluepill',
-                                             'iamnottheone',
-                                             enabled=True)
+                                           'tom',
+                                           'tom@theone.matrix',
+                                           'bluepill',
+                                           'iamnottheone',
+                                           enabled=True)
         self.keystone.model.add_user_role_by_rolename(neo_tenant_id,
-                                                        tom,
-                                                        'identity:user-admin')
+                                                      tom,
+                                                      'identity:user-admin')
 
         self.keystone.model.add_token(neo_tenant_id, tom)
         del self.user_info['user']['username']
@@ -80,16 +80,16 @@ class TestKeystoneV2UserAdd(unittest.TestCase):
     def test_user_add_same_user(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
         neo_tenant_id = self.keystone.model.add_tenant(tenantname='neo',
-                                                         description='The One')
+                                                       description='The One')
         tom = self.keystone.model.add_user(neo_tenant_id,
-                                             'tom',
-                                             'tom@theone.matrix',
-                                             'bluepill',
-                                             'iamnottheone',
-                                             enabled=True)
+                                           'tom',
+                                           'tom@theone.matrix',
+                                           'bluepill',
+                                           'iamnottheone',
+                                           enabled=True)
         self.keystone.model.add_user_role_by_rolename(neo_tenant_id,
-                                                        tom,
-                                                        'identity:user-admin')
+                                                      tom,
+                                                      'identity:user-admin')
 
         self.keystone.model.add_token(neo_tenant_id, tom)
         self.user_info['user']['username'] = 'tom'
@@ -106,11 +106,11 @@ class TestKeystoneV2UserAdd(unittest.TestCase):
         neo_tenant_id = self.keystone.model.add_tenant(tenantname='neo',
                                                        description='The One')
         tom = self.keystone.model.add_user(neo_tenant_id,
-                                             'tom',
-                                             'tom@theone.matrix',
-                                             'bluepill',
-                                             'iamnottheone',
-                                             enabled=True)
+                                           'tom',
+                                           'tom@theone.matrix',
+                                           'bluepill',
+                                           'iamnottheone',
+                                           enabled=True)
         self.keystone.model.add_user_role_by_rolename(neo_tenant_id,
                                                       tom,
                                                       'identity:user-admin')
@@ -130,14 +130,14 @@ class TestKeystoneV2UserAdd(unittest.TestCase):
         neo_tenant_id = self.keystone.model.add_tenant(tenantname='neo',
                                                        description='The One')
         tom = self.keystone.model.add_user(neo_tenant_id,
-                                             'tom',
-                                             'tom@theone.matrix',
-                                             'bluepill',
-                                             'iamnottheone',
-                                             enabled=True)
+                                           'tom',
+                                           'tom@theone.matrix',
+                                           'bluepill',
+                                           'iamnottheone',
+                                           enabled=True)
         self.keystone.model.add_user_role_by_rolename(neo_tenant_id,
-                                                        tom,
-                                                        'identity:user-admin')
+                                                      tom,
+                                                      'identity:user-admin')
 
         self.keystone.model.add_token(neo_tenant_id, tom)
         del self.user_info['user']['OS-KSADM:password']
@@ -152,16 +152,16 @@ class TestKeystoneV2UserAdd(unittest.TestCase):
     def test_user_add_invalid_password(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
         neo_tenant_id = self.keystone.model.add_tenant(tenantname='neo',
-                                                         description='The One')
+                                                       description='The One')
         tom = self.keystone.model.add_user(neo_tenant_id,
-                                             'tom',
-                                             'tom@theone.matrix',
-                                             'bluepill',
-                                             'iamnottheone',
-                                             enabled=True)
+                                           'tom',
+                                           'tom@theone.matrix',
+                                           'bluepill',
+                                           'iamnottheone',
+                                           enabled=True)
         self.keystone.model.add_user_role_by_rolename(neo_tenant_id,
-                                                        tom,
-                                                        'identity:user-admin')
+                                                      tom,
+                                                      'identity:user-admin')
 
         self.keystone.model.add_token(neo_tenant_id, tom)
         self.user_info['user']['OS-KSADM:password'] = 'Inl0veWithNeo$'
@@ -179,22 +179,22 @@ class TestKeystoneV2UserAdd(unittest.TestCase):
     def test_user_add_failed(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
         neo_tenant_id = self.keystone.model.add_tenant(tenantname='neo',
-                                                         description='The One')
+                                                       description='The One')
         tom = self.keystone.model.add_user(neo_tenant_id,
-                                             'tom',
-                                             'tom@theone.matrix',
-                                             'bluepill',
-                                             'iamnottheone',
-                                             enabled=True)
+                                           'tom',
+                                           'tom@theone.matrix',
+                                           'bluepill',
+                                           'iamnottheone',
+                                           enabled=True)
         self.keystone.model.add_user_role_by_rolename(neo_tenant_id,
-                                                        tom,
-                                                        'identity:user-admin')
+                                                      tom,
+                                                      'identity:user-admin')
 
         self.keystone.model.add_token(neo_tenant_id, tom)
         json_data = json.dumps(self.user_info)
         user_data = self.keystone.model.get_token_by_userid(tom)
         self.headers['x-auth-token'] = user_data['token']
-        
+
         with mock.patch(
                 'openstackinabox.models.keystone.model.'
                 'KeystoneModel.add_user') as mok_keystone_model:
@@ -207,16 +207,16 @@ class TestKeystoneV2UserAdd(unittest.TestCase):
     def test_user_add(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
         neo_tenant_id = self.keystone.model.add_tenant(tenantname='neo',
-                                                         description='The One')
+                                                       description='The One')
         tom = self.keystone.model.add_user(neo_tenant_id,
-                                             'tom',
-                                             'tom@theone.matrix',
-                                             'bluepill',
-                                             'iamnottheone',
-                                             enabled=True)
+                                           'tom',
+                                           'tom@theone.matrix',
+                                           'bluepill',
+                                           'iamnottheone',
+                                           enabled=True)
         self.keystone.model.add_user_role_by_rolename(neo_tenant_id,
-                                                        tom,
-                                                        'identity:user-admin')
+                                                      tom,
+                                                      'identity:user-admin')
 
         self.keystone.model.add_token(neo_tenant_id, tom)
         json_data = json.dumps(self.user_info)
@@ -235,4 +235,3 @@ class TestKeystoneV2UserAdd(unittest.TestCase):
         self.assertEqual(user_info['password'], 'bluepill')
         self.assertEqual(user_info['apikey'], 'iamnottheone')
         self.assertTrue(user_info['enabled'])
-

@@ -32,7 +32,7 @@ class TestKeystoneV2UserGet(unittest.TestCase):
     def test_user_get_no_token(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
         neo_tenant_id = self.keystone.model.add_tenant(tenantname='neo',
-                                                         description='The One')
+                                                       description='The One')
         tom = self.keystone.model.add_user(neo_tenant_id,
                                            'tom',
                                            'tom@theone.matrix',
@@ -41,7 +41,7 @@ class TestKeystoneV2UserGet(unittest.TestCase):
                                            enabled=True)
         self.keystone.model.add_token(neo_tenant_id, tom)
         user_data = self.keystone.model.get_token_by_userid(tom)
-        
+
         url = 'http://localhost/keystone/v2.0/users/{0}'.format(tom)
         res = requests.get(url)
         self.assertEqual(res.status_code, 403)
@@ -49,7 +49,7 @@ class TestKeystoneV2UserGet(unittest.TestCase):
     def test_user_get_invalid_token(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
         neo_tenant_id = self.keystone.model.add_tenant(tenantname='neo',
-                                                         description='The One')
+                                                       description='The One')
         tom = self.keystone.model.add_user(neo_tenant_id,
                                            'tom',
                                            'tom@theone.matrix',
@@ -58,16 +58,16 @@ class TestKeystoneV2UserGet(unittest.TestCase):
                                            enabled=True)
         self.keystone.model.add_token(neo_tenant_id, tom)
         user_data = self.keystone.model.get_token_by_userid(tom)
-        
+
         url = 'http://localhost/keystone/v2.0/users/{0}'.format(tom)
-        self.headers['x-auth-token'] = 'new_token' 
+        self.headers['x-auth-token'] = 'new_token'
         res = requests.get(url, headers=self.headers)
         self.assertEqual(res.status_code, 401)
 
     def test_user_get_bad_userid(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
         neo_tenant_id = self.keystone.model.add_tenant(tenantname='neo',
-                                                         description='The One')
+                                                       description='The One')
         tom = self.keystone.model.add_user(neo_tenant_id,
                                            'tom',
                                            'tom@theone.matrix',
@@ -76,7 +76,7 @@ class TestKeystoneV2UserGet(unittest.TestCase):
                                            enabled=True)
         self.keystone.model.add_token(neo_tenant_id, tom)
         user_data = self.keystone.model.get_token_by_userid(tom)
-        
+
         url = 'http://localhost/keystone/v2.0/users/{0}'.format(tom + 1)
         self.headers['x-auth-token'] = user_data['token']
         res = requests.get(url, headers=self.headers)
@@ -94,7 +94,7 @@ class TestKeystoneV2UserGet(unittest.TestCase):
                                            enabled=True)
         self.keystone.model.add_token(neo_tenant_id, tom)
         user_data = self.keystone.model.get_token_by_userid(tom)
-        
+
         url = 'http://localhost/keystone/v2.0/users/{0}'.format(tom)
         self.headers['x-auth-token'] = user_data['token']
         res = requests.get(url, headers=self.headers)

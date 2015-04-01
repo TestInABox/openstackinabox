@@ -19,8 +19,8 @@ class BaseModel(object):
 
     def log_info(self, msg):
         logger.info('{0} ({1}): {2}'
-                     .format(self.name, id(self), msg))
+                    .format(self.name, id(self), msg))
 
     def log_exception(self, msg):
         logger.exception('{0} ({1}): {2}'
-                     .format(self.name, id(self), msg))
+                         .format(self.name, id(self), msg))
