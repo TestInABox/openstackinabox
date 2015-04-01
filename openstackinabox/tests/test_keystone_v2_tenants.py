@@ -55,7 +55,7 @@ class TestKeystoneV2Tenants(unittest.TestCase):
         self.assertEqual(len(tenant_data['tenants']), 1)
 
         self.keystone.model.add_tenant(tenantname='neo',
-                                         description='The One')
+                                       description='The One')
 
         res = requests.get('http://localhost/keystone/v2.0/tenants',
                            headers=self.headers)
