@@ -141,6 +141,16 @@ SQL_GET_USER_BY_USERID = '''
           userid = :userid
 '''
 
+SQL_UPDATE_USER_BY_USERID = '''
+    UPDATE keystone_users
+    SET enabled = :enabled,
+        email = :email,
+        password = :password,
+        apikey = :apikey
+    WHERE tenantid = :tenantid AND
+          userid = :userid
+'''
+
 SQL_GET_USERS_FOR_TENANT_ID = '''
     SELECT tenantid, userid, username, email, password, apikey, enabled
     FROM keystone_users
@@ -518,6 +528,24 @@ class KeystoneModel(BaseModel):
             'enabled': KeystoneModel.bool_from_database(user_data[6])
         }
 
+    def update_user_by_user_id(self, tenantid=None, userid=None, email=None,
+                              password=None, apikey=None, enabled=True):
+        dbcursor = self.database.cursor()
+        args = {
+            'tenantid': tenantid,
+            'userid': userid,
+            'email': email,
+            'password': password,
+            'apikey': apikey,
+            'enabled': enabled
+        }
+        dbcursor.execute(SQL_UPDATE_USER_BY_USERID, args)
+        if not dbcursor.rowcount:
+            raise KeystoneUnknownUserError('unable to update user - {0}'
+                                           .format(args))
+
+        self.database.commit()
+
     def get_users_for_tenant_id(self, tenantid=None):
         dbcursor = self.database.cursor()
         args = {
@@ -596,7 +624,8 @@ class KeystoneModel(BaseModel):
         dbcursor.execute(SQL_GET_TOKEN_BY_USER_ID, args)
         token_data = dbcursor.fetchone()
         if token_data is None:
-            raise KeystoneUnknownUserError('Unknown userid')
+            raise KeystoneUnknownUserError('Unknown userid - {0}'
+                                           .format(userid))
 
         return {
             'tenantid': token_data[0],
@@ -756,3 +785,22 @@ class KeystoneModel(BaseModel):
             self.log_exception('Error: {0}'.format(ex))
 
         raise KeystoneInvalidTokenError('Invalid Token')
+
+    def validate_token_service_admin(self, token):
+        try:
+            self.log_debug('Checking token {0} for validity...'
+                           .format(token))
+            user_data = self.validate_token_admin(token)
+
+            self.log_debug('Checking if token {0} is the sole service admin '
+                           'token...'
+                           .format(token))
+
+            if token == self.get_admin_token():
+                self.log_debug('Token {0} validated.'.format(token))
+                return user_data
+
+        except Exception as ex:
+            self.log_exception('Error: {0}'.format(ex))
+
+        raise KeystoneInvalidTokenError('Not the service admin token')
