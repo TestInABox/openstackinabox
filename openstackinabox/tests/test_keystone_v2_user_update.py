@@ -36,12 +36,12 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
         self.user_info['user']['userid'] =\
             self.keystone.model.add_user(tenantid=self.tenant_id,
                                          username=self.user_info['user'][
-                                         'username'],
+                                             'username'],
                                          email=self.user_info['user']['email'],
                                          password=self.user_info['user'][
-                                         'OS-KSADM:password'],
+                                             'OS-KSADM:password'],
                                          enabled=self.user_info['user'][
-                                         'enabled'])
+                                             'enabled'])
         self.keystone.model.add_token(self.tenant_id,
                                       self.user_info['user']['userid'])
         StackInABox.register_service(self.keystone)
