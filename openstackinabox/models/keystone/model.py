@@ -14,7 +14,6 @@ from openstackinabox.models.base_model import *
 """
     - Build a service catalog
     - Add tenants
-    - Add users
     - Add services
     - Add roles
     - Authentication
@@ -112,7 +111,7 @@ SQL_UPDATE_TENANT_DESCRIPTION = '''
 
 SQL_UPDATE_TENANT_STATUS = '''
     UPDATE keystone_tenants
-    set enabled = :enabled
+    SET enabled = :enabled
     WHERE tenantid = :tenantid
 '''
 
@@ -120,6 +119,12 @@ SQL_ADD_USER = '''
     INSERT INTO keystone_users
     (tenantid, username, email, password, apikey, enabled)
     VALUES (:tenantid, :username, :email, :password, :apikey, :enabled)
+'''
+
+SQL_DELETE_USER = '''
+    DELETE FROM keystone_users
+    WHERE tenantid = :tenantid
+      AND userid = :userid
 '''
 
 SQL_GET_MAX_USER_ID = '''
@@ -485,6 +490,16 @@ class KeystoneModel(BaseModel):
                        .format(tenantid, username, userid))
 
         return userid
+
+    def delete_user(self, tenantid=None, userid=None):
+        args = {
+            'tenantid': tenantid,
+            'userid': userid
+        }
+        dbcursor = self.database.cursor()
+        dbcursor.execute(SQL_DELETE_USER, args)
+        user_data = dbcursor.fetchone()
+        self.database.commit()
 
     def get_user_by_id(self, tenantid=None, userid=None):
         dbcursor = self.database.cursor()

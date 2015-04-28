@@ -59,6 +59,9 @@ class KeystoneV2Service(BaseService):
         self.register(BaseService.POST,
                       KeystoneV2Service.USER_ID_PATH_REGEX,
                       KeystoneV2Service.handle_update_user_by_id)
+        self.register(BaseService.DELETE,
+                      KeystoneV2Service.USER_ID_PATH_REGEX,
+                      KeystoneV2Service.handle_delete_user_by_id)
         self.log_info('initialized')
 
     @property
@@ -443,3 +446,50 @@ class KeystoneV2Service(BaseService):
             return (503, headers, 'Server error')
 
         return (200, headers, json.dumps(user_info))
+
+    def handle_delete_user_by_id(self, request, uri, headers):
+        '''
+        204 -> OK
+        400 -> Bad Request
+        401 -> Unauthorized
+        403 -> Forbidden
+        404 -> Not Found
+        405 -> Invalid Method
+        413 -> Over Limit
+        503 -> Server Fault
+        '''
+        self.log_request(uri, request)
+        req_headers = request.headers
+
+        user_data = self.helper_authenticate(req_headers,
+                                             headers,
+                                             False,
+                                             False)
+        if isinstance(user_data, tuple):
+            return user_data
+
+        try:
+            user_id = KeystoneV2Service.get_user_id_from_path(uri)
+            self.log_debug('Lookup of user id {0} requested'
+                           .format(user_id))
+
+        except Exception as ex:  # pragma: no cover
+            self.log_exception('Failed to get user id from path')
+            return (400, headers, 'bad request')
+
+        try:
+            user_info = self.model.get_user_by_id(user_data['tenantid'],
+                                                  user_id)
+        except Exception as ex:
+            self.log_exception('failed to get user data')
+            return (404, headers, 'Not Found')
+
+        try:
+            self.model.delete_user(tenantid=user_data['tenantid'],
+                                   userid=user_id)
+
+        except Exception as ex:  # pragma: no cover
+            self.log_exception('failed to delete user')
+            return (503, headers, 'Server error')
+
+        return (204, headers, '')
