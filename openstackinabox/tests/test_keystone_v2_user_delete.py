@@ -39,14 +39,16 @@ class TestKeystoneV2UserDelete(unittest.TestCase):
 
     def test_user_delete_no_token(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
-        res = requests.delete('http://localhost/keystone/v2.0/users/1234567890')
+        res = requests.delete(
+            'http://localhost/keystone/v2.0/users/1234567890')
         self.assertEqual(res.status_code, 403)
 
     def test_user_delete_invalid_token(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
         self.headers['x-auth-token'] = 'new_token'
-        res = requests.delete('http://localhost/keystone/v2.0/users/1234567890',
-                              headers=self.headers)
+        res = requests.delete(
+            'http://localhost/keystone/v2.0/users/1234567890',
+            headers=self.headers)
         self.assertEqual(res.status_code, 401)
 
     def test_user_delete_bad_request(self):
@@ -67,8 +69,9 @@ class TestKeystoneV2UserDelete(unittest.TestCase):
         json_data = json.dumps(self.user_info)
         user_data = self.keystone.model.get_token_by_userid(tom)
         self.headers['x-auth-token'] = user_data['token']
-        res = requests.delete('http://localhost/keystone/v2.0/users/1234567890',
-                              headers=self.headers)
+        res = requests.delete(
+            'http://localhost/keystone/v2.0/users/1234567890',
+            headers=self.headers)
         self.assertEqual(res.status_code, 404)
 
     def test_user_delete(self):
