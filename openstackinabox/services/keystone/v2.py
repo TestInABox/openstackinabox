@@ -38,6 +38,10 @@ class KeystoneV2Service(BaseService):
         '^\/users\/{0}/OS-KSADM/credentials$'
         .format(USER_ID_REGEX))
 
+    USER_ID_ADMIN_PATH_REGEX = re.compile(
+        '^\/users\/{0}/RAX-AUTH/admins$'
+        .format(USER_ID_REGEX))
+
     @staticmethod
     def get_user_id_from_path(uri_path):
         uri_matcher = None
@@ -45,6 +49,7 @@ class KeystoneV2Service(BaseService):
         regexes = [
             KeystoneV2Service.USER_ID_PATH_REGEX,
             KeystoneV2Service.USER_ID_KSADM_CREDENTIAL_PATH_REGEX,
+            KeystoneV2Service.USER_ID_ADMIN_PATH_REGEX,
         ]
 
         for r in regexes:
@@ -81,6 +86,9 @@ class KeystoneV2Service(BaseService):
         self.register(BaseService.POST,
                       KeystoneV2Service.USER_ID_KSADM_CREDENTIAL_PATH_REGEX,
                       KeystoneV2Service.handle_add_credentials_to_user)
+        self.register(BaseService.GET,
+                      KeystoneV2Service.USER_ID_ADMIN_PATH_REGEX,
+                      KeystoneV2Service.handle_get_admin_user)
         self.log_info('initialized')
 
     @property
@@ -579,3 +587,62 @@ class KeystoneV2Service(BaseService):
             return (503, headers, 'Server error')
 
         return (201, headers, '')
+
+    def handle_get_admin_user(self, request, uri, headers):
+        '''
+            200 -> OK
+            400 -> Bad Request
+            403 -> Forbidden
+            404 -> Not Found
+            405 -> Invalid Method
+            413 -> Over Limit
+            415 -> Bad Media Type
+            503 -> Service Fault
+
+            No body
+
+            Response
+            {
+            "users": [
+                {
+                    "RAX-AUTH:defaultRegion": <region>,
+                    "RAX-AUTH:domainId": <tenantid>,
+                    "email": <email>
+                    "enabled": True/False,
+                    "id": <userid>,
+                    "username": <username>
+                }
+            ]
+            }
+        '''
+        self.log_request(uri, request)
+        req_headers = request.headers
+
+        user_data = self.helper_authenticate(req_headers,
+                                             headers,
+                                             True,
+                                             False)
+        if isinstance(user_data, tuple):
+            return user_data
+
+        try:
+            user_id = KeystoneV2Service.get_user_id_from_path(uri)
+            self.log_debug('Lookup of user id {0} requested'
+                           .format(user_id))
+
+        except Exception as ex:  # pragma: no cover
+            self.log_exception('Failed to get user id from path')
+            return (400, headers, 'bad request')
+
+        try:
+            user_info = self.model.get_user_by_id(user_data['tenantid'],
+                                                  user_id)
+        except:
+            self.log_exception('failed to get user data')
+            return (404, headers, 'Not found')
+
+        del user_info['password']
+        del user_info['apikey']
+        user_info['RAX-AUTH:DomainID'] = user_info['tenantid']
+
+        return (200, headers, json.dumps(user_info))
