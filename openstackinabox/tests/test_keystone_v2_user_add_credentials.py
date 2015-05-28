@@ -71,7 +71,7 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
             self.user_info['user']['userid'])
 
         user_info = {
-            'passwordCredentials':  {
+            'passwordCredentials': {
                 'username': self.user_info['user']['username'],
                 'password': 'Tr1n1tyR0ck$'
             }
@@ -95,7 +95,7 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
             self.user_info['user']['userid'])
 
         user_info = {
-            'passwordCredentials':  {
+            'passwordCredentials': {
                 'enabled': False,
                 'username': self.user_info['user']['username'],
                 'password': 'Tr1n1tyR0ck$'
@@ -117,7 +117,7 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
             self.user_info['user']['userid'])
 
         user_info = {
-            'passwordCredentials':  {
+            'passwordCredentials': {
                 'username': self.user_info['user']['username'],
                 'password': 'Tr1n1tyR0ck$'
             }
@@ -135,7 +135,7 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
             self.user_info['user']['userid'])
 
         user_info = {
-            'passwordCredentials':  {
+            'passwordCredentials': {
                 'username': self.user_info['user']['username'],
                 'password': 'Tr1n1tyR0ck$'
             }
@@ -156,7 +156,7 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
             self.user_info['user']['userid'])
 
         user_info = {
-            'credentials':  {
+            'credentials': {
                 'username': self.user_info['user']['username'],
                 'password': 'Tr1n1tyR0ck$'
             }
@@ -176,10 +176,10 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
 
         url = TestKeystoneV2UserAddCredentials.get_userid_url(
             'localhost',
-            (int(self.user_info['user']['userid'])+1))
+            (int(self.user_info['user']['userid']) + 1))
 
         user_info = {
-            'passwordCredentials':  {
+            'passwordCredentials': {
                 'username': self.user_info['user']['username'],
                 'password': 'Tr1n1tyR0ck$'
             }
