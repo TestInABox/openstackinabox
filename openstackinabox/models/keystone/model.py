@@ -579,7 +579,7 @@ class KeystoneModel(BaseModel):
         }
 
     def update_user_by_user_id(self, tenantid=None, userid=None, email=None,
-                              password=None, apikey=None, enabled=True):
+                               password=None, apikey=None, enabled=True):
         dbcursor = self.database.cursor()
         args = {
             'tenantid': tenantid,
