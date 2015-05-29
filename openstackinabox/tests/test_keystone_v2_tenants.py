@@ -4,17 +4,15 @@ Stack-In-A-Box: Basic Test
 import json
 import unittest
 
-import httpretty
 import mock
 import requests
-import stackinabox.util_httpretty
+import stackinabox.util_requests_mock
 from stackinabox.stack import StackInABox
 
 from openstackinabox.models.keystone.model import KeystoneModel
 from openstackinabox.services.keystone import KeystoneV2Service
 
 
-@httpretty.activate
 class TestKeystoneV2Tenants(unittest.TestCase):
 
     def setUp(self):
@@ -30,39 +28,46 @@ class TestKeystoneV2Tenants(unittest.TestCase):
         StackInABox.reset_services()
 
     def test_tenant_listing_no_token(self):
-        stackinabox.util_httpretty.httpretty_registration('localhost')
+        with stackinabox.util_requests_mock.activate():
+            stackinabox.util_requests_mock.requests_mock_registration(
+                'localhost')
 
-        res = requests.get('http://localhost/keystone/v2.0/tenants')
-        self.assertEqual(res.status_code, 403)
+            res = requests.get('http://localhost/keystone/v2.0/tenants')
+            self.assertEqual(res.status_code, 403)
 
     def test_tenant_listing_invalid_token(self):
-        stackinabox.util_httpretty.httpretty_registration('localhost')
+        with stackinabox.util_requests_mock.activate():
+            stackinabox.util_requests_mock.requests_mock_registration(
+                'localhost')
 
-        self.headers['x-auth-token'] = 'new_token'
-        res = requests.get('http://localhost/keystone/v2.0/tenants',
-                           headers=self.headers)
-        self.assertEqual(res.status_code, 401)
+            self.headers['x-auth-token'] = 'new_token'
+            res = requests.get('http://localhost/keystone/v2.0/tenants',
+                               headers=self.headers)
+            self.assertEqual(res.status_code, 401)
 
     def test_tenant_listing(self):
-        stackinabox.util_httpretty.httpretty_registration('localhost')
+        with stackinabox.util_requests_mock.activate():
+            stackinabox.util_requests_mock.requests_mock_registration(
+                'localhost')
 
-        res = requests.get('http://localhost/keystone/v2.0/tenants',
-                           headers=self.headers)
-        self.assertEqual(res.status_code, 200)
-        tenant_data = res.json()
+            res = requests.get('http://localhost/keystone/v2.0/tenants',
+                               headers=self.headers)
+            self.assertEqual(res.status_code, 200)
+            tenant_data = res.json()
 
-        # There is always 1 tenant - the system
-        self.assertEqual(len(tenant_data['tenants']), 1)
+            # There is always 1 tenant - the system
+            self.assertEqual(len(tenant_data['tenants']), 1)
 
-        self.keystone.model.add_tenant(tenantname='neo',
-                                       description='The One')
+            self.keystone.model.add_tenant(tenantname='neo',
+                                           description='The One')
 
-        res = requests.get('http://localhost/keystone/v2.0/tenants',
-                           headers=self.headers)
-        self.assertEqual(res.status_code, 200)
-        tenant_data = res.json()
+            res = requests.get('http://localhost/keystone/v2.0/tenants',
+                               headers=self.headers)
+            self.assertEqual(res.status_code, 200)
+            tenant_data = res.json()
 
-        self.assertEqual(len(tenant_data['tenants']), 2)
-        self.assertEqual(tenant_data['tenants'][1]['name'], 'neo')
-        self.assertEqual(tenant_data['tenants'][1]['description'], 'The One')
-        self.assertTrue(tenant_data['tenants'][1]['enabled'])
+            self.assertEqual(len(tenant_data['tenants']), 2)
+            self.assertEqual(tenant_data['tenants'][1]['name'], 'neo')
+            self.assertEqual(tenant_data['tenants'][1]['description'],
+                             'The One')
+            self.assertTrue(tenant_data['tenants'][1]['enabled'])
