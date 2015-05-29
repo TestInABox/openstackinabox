@@ -42,6 +42,10 @@ class KeystoneV2Service(BaseService):
         '^\/users\/{0}/RAX-AUTH/admins$'
         .format(USER_ID_REGEX))
 
+    USER_ID_APIKEY_RESET_PATH_REGEX = re.compile(
+        '^\/users\/{0}/OS-KSADM/credentials/RAX-KSKEY:apiKeyCredentials/RAX-AUTH/reset$'
+        .format(USER_ID_REGEX))
+
     @staticmethod
     def get_user_id_from_path(uri_path):
         uri_matcher = None
@@ -50,6 +54,7 @@ class KeystoneV2Service(BaseService):
             KeystoneV2Service.USER_ID_PATH_REGEX,
             KeystoneV2Service.USER_ID_KSADM_CREDENTIAL_PATH_REGEX,
             KeystoneV2Service.USER_ID_ADMIN_PATH_REGEX,
+            KeystoneV2Service.USER_ID_APIKEY_RESET_PATH_REGEX,
         ]
 
         for r in regexes:
@@ -92,6 +97,10 @@ class KeystoneV2Service(BaseService):
         self.register(BaseService.GET,
                       KeystoneV2Service.USER_ID_KSADM_CREDENTIAL_PATH_REGEX,
                       KeystoneV2Service.handle_get_user_credentials)
+        self.register(BaseService.POST,
+                      KeystoneV2Service.USER_ID_APIKEY_RESET_PATH_REGEX,
+                      KeystoneV2Service.handle_reset_apikey)
+
         self.log_info('initialized')
 
     @property
@@ -683,6 +692,7 @@ class KeystoneV2Service(BaseService):
                                              False)
         if isinstance(user_data, tuple):
             return user_data
+
         try:
             user_id = KeystoneV2Service.get_user_id_from_path(uri)
             self.log_debug('Lookup of user id {0} requested'
@@ -699,6 +709,13 @@ class KeystoneV2Service(BaseService):
             self.log_exception('failed to get user data')
             return (404, headers, 'Not found')
 
+        try:
+            user_info = self.model.get_user_by_id(user_data['tenantid'],
+                                                  user_id)
+        except: #pragma: no cover
+            self.log_exception('failed to get user data')
+            return (404, headers, 'Not found')
+
         user_credentials = {
             'passwordCredentials': {
                 'username': user_info['username'],
@@ -707,3 +724,77 @@ class KeystoneV2Service(BaseService):
         }
         json_data = json.dumps(user_credentials)
         return (200, headers, json_data)
+
+    def handle_reset_apikey(self, request, uri, headers):
+        '''
+            200 -> OK
+            400 -> Bad Request
+            401 -> Unauthorized
+            403 -> Forbidden
+            404 -> Not Found
+            405 -> Invalid Method
+            413 -> Over Limit
+            415 -> Bad Media Type
+            503 -> Service Fault
+
+            No body
+
+            Response
+            {
+                "RAX-KSKEY:apiKeyCredentials": {
+                    "username": <username>,
+                    "apiKey": <apikey>
+                }
+            }
+        '''
+        self.log_request(uri, request)
+        req_headers = request.headers
+
+        user_data = self.helper_authenticate(req_headers,
+                                             headers,
+                                             True,
+                                             False)
+        self.log_request(uri, request)
+        req_headers = request.headers
+
+        user_data = self.helper_authenticate(req_headers,
+                                             headers,
+                                             True,
+                                             False)
+        if isinstance(user_data, tuple):
+            return user_data
+
+        try:
+            user_id = KeystoneV2Service.get_user_id_from_path(uri)
+            self.log_debug('Lookup of user id {0} requested'
+                           .format(user_id))
+
+        except Exception as ex:  # pragma: no cover
+            self.log_exception('Failed to get user id from path')
+            return (400, headers, 'bad request')
+
+        try:
+            user_info = self.model.get_user_by_id(user_data['tenantid'],
+                                                  user_id)
+        except:
+            self.log_exception('failed to get user data')
+            return (404, headers, 'Not found')
+
+        user_info['apikey'] = '123456789abcd'     
+
+        try:
+            self.model.update_user_by_user_id(user_info['tenantid'], user_info['userid'],
+                                              user_info['apikey'])
+        except Exception as ex:  # pragma: no cover
+           self.log_exception('failed to update user')
+           return (503, headers, 'Server error')
+
+        response = {
+           "RAX-KSKEY:apiKeyCredentials": {
+                "username": user_info['username'],
+                "apikey": user_info['apikey']
+             }
+        }
+        json_data = json.dumps(response)
+        return (200, headers, json_data)
+
