@@ -1,7 +1,7 @@
 import sys
 from setuptools import setup, find_packages
 
-REQUIRES = ['stackinabox', 'six']
+REQUIRES = ['stackinabox>=0.9', 'six']
 
 setup(
     name='openstackinabox',
