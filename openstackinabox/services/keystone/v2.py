@@ -89,6 +89,9 @@ class KeystoneV2Service(BaseService):
         self.register(BaseService.GET,
                       KeystoneV2Service.USER_ID_ADMIN_PATH_REGEX,
                       KeystoneV2Service.handle_get_admin_user)
+        self.register(BaseService.GET,
+                      KeystoneV2Service.USER_ID_KSADM_CREDENTIAL_PATH_REGEX,
+                      KeystoneV2Service.handle_get_user_credentials)
         self.log_info('initialized')
 
     @property
@@ -646,3 +649,58 @@ class KeystoneV2Service(BaseService):
         user_info['RAX-AUTH:DomainID'] = user_info['tenantid']
 
         return (200, headers, json.dumps(user_info))
+    
+    def handle_get_user_credentials(self, request, uri, headers):
+        '''
+            200, 203 -> OK
+            400 -> Bad Request
+            401 -> Unauthorized
+            403 -> Forbidden
+            404 -> Not Found
+            405 -> Invalid Method
+            413 -> Over Limit
+            503 -> Service Fault
+
+            No body
+
+            Response
+            {
+                "passwordCredentials": {
+                    "username": <username>,
+                    "password": <password>
+                    }
+            }
+        '''
+        self.log_request(uri, request)
+        req_headers = request.headers
+
+        user_data = self.helper_authenticate(req_headers,
+                                             headers,
+                                             True,
+                                             False)
+        if isinstance(user_data, tuple):
+            return user_data
+        try:
+            user_id = KeystoneV2Service.get_user_id_from_path(uri)
+            self.log_debug('Lookup of user id {0} requested'
+                           .format(user_id))
+
+        except Exception as ex:  # pragma: no cover
+            self.log_exception('Failed to get user id from path')
+            return (400, headers, 'bad request')
+
+        try:
+            user_info = self.model.get_user_by_id(user_data['tenantid'],
+                                                  user_id)
+        except:
+            self.log_exception('failed to get user data')
+            return (404, headers, 'Not found')
+
+        user_credentials = {
+            'passwordCredentials': {
+                'username': user_info['username'],
+                'password': user_info['password']
+            }
+        }
+        json_data = json.dumps(user_credentials)
+        return (200, headers, json_data)

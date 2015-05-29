@@ -51,7 +51,6 @@ class TestKeystoneV2GetAdmin(unittest.TestCase):
             rolename=self.keystone.model.IDENTITY_ADMIN_ROLE)
         StackInABox.register_service(self.keystone)
 
-
     def tearDown(self):
         super(TestKeystoneV2GetAdmin, self).tearDown()
         StackInABox.reset_services()
@@ -72,9 +71,7 @@ class TestKeystoneV2GetAdmin(unittest.TestCase):
             self.user_info['user']['userid'])
 
         self.headers['x-auth-token'] = user_data['token']
-        res = requests.get(url,
-                            headers=self.headers,
-                            data='')
+        res = requests.get(url, headers=self.headers, data='')
         self.assertEqual(res.status_code, 200)
 
     def test_get_admin_user_incorrect_request(self):
@@ -87,9 +84,7 @@ class TestKeystoneV2GetAdmin(unittest.TestCase):
             'localhost',
             self.user_info['user']['userid'])
 
-        res = requests.get(url,
-                            headers=self.headers,
-                            data='')
+        res = requests.get(url, headers=self.headers, data='')
         self.assertEqual(res.status_code, 404)
 
     def test_get_admin_user_no_token(self):
@@ -109,9 +104,7 @@ class TestKeystoneV2GetAdmin(unittest.TestCase):
             'localhost',
             self.user_info['user']['userid'])
         self.headers['x-auth-token'] = 'new_token'
-        res = requests.get(url,
-                            headers=self.headers,
-                            data='')
+        res = requests.get(url, headers=self.headers, data='')
         self.assertEqual(res.status_code, 401)
 
     
