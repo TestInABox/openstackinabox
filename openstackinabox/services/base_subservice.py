@@ -27,9 +27,9 @@ class BaseSubService(BaseService):
                 'openstackinabox.services.base_subservice.BaseSubService')
 
         self.__parent = parent
-        self.__is_base = False
+        self._is_base = False
 
-    def __get_parent(self):
+    def get_parent(self):
         return self.__parent
 
     def get_root(self):

@@ -10,7 +10,7 @@ class BaseService(StackInABoxService):
 
     def __init__(self, name):
         super(BaseService, self).__init__(name)
-        self.__is_base = True
+        self._is_base = True
 
     def log_debug(self, msg):
         logger.debug('{0} ({1}): {2}'
@@ -30,7 +30,7 @@ class BaseService(StackInABoxService):
 
     @property
     def is_base(self):
-        return self.__is_base
+        return self._is_base
 
     @property
     def model(self):
@@ -40,7 +40,7 @@ class BaseService(StackInABoxService):
     def model(self, value):
         self.set_model(value)
 
-    def get_model():
+    def get_model(self):
         raise NotImplementedError
 
     def set_model(self, value):
