@@ -11,6 +11,7 @@ from stackinabox.stack import StackInABox
 
 from openstackinabox.models.keystone.model import KeystoneModel
 from openstackinabox.services.keystone import KeystoneV2Service
+from openstackinabox.services.keystone.v2.users import KeystoneV2ServiceUsers
 
 
 class TestHttprettyKeystone(unittest.TestCase):
@@ -53,9 +54,9 @@ class TestHttprettyKeystone(unittest.TestCase):
         ]
 
         for case_uri, case_id in positive_cases:
-            user_id = self.keystone.get_user_id_from_path(case_uri)
+            user_id = KeystoneV2ServiceUsers.get_user_id_from_path(case_uri)
             self.assertEqual(user_id, case_id)
 
         for case_uri in negative_cases:
             with self.assertRaises(Exception):
-                self.keystone.get_user_id_from_path(case_uri)
+                KeystoneV2ServiceUsers.get_user_id_from_path(case_uri)

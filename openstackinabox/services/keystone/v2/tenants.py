@@ -20,6 +20,7 @@ class KeystoneV2ServiceTenants(BaseSubService):
         self.register(BaseService.GET,
                       KeystoneV2ServiceTenants.PATH_REGEX,
                       KeystoneV2ServiceTenants.handle_list_tenants)
+
     def get_route_regex(self):
         return KeystoneV2ServiceTenants.ROUTE_REGEX
 
