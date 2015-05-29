@@ -31,11 +31,27 @@ class KeystoneV2AuthUnauthorizedError(KeystoneV2AuthError):
 class KeystoneV2Service(BaseService):
 
     # USER_ID_PATH_REGEX = re.compile('^\/users\/[a-zA-Z]+[\w\.@-]*$')
-    USER_ID_PATH_REGEX = re.compile('^\/users\/([0-9]+)$')
+    USER_ID_REGEX = '([0-9]+)'
+    USER_ID_PATH_REGEX = re.compile('^\/users\/{0}$'
+                                    .format(USER_ID_REGEX))
+    USER_ID_KSADM_CREDENTIAL_PATH_REGEX = re.compile(
+        '^\/users\/{0}/OS-KSADM/credentials$'
+        .format(USER_ID_REGEX))
 
     @staticmethod
     def get_user_id_from_path(uri_path):
-        uri_matcher = KeystoneV2Service.USER_ID_PATH_REGEX.match(uri_path)
+        uri_matcher = None
+
+        regexes = [
+            KeystoneV2Service.USER_ID_PATH_REGEX,
+            KeystoneV2Service.USER_ID_KSADM_CREDENTIAL_PATH_REGEX,
+        ]
+
+        for r in regexes:
+            uri_matcher = r.match(uri_path)
+            if uri_matcher is not None:
+                break
+
         userid = uri_matcher.groups()[0]
         return userid
 
@@ -62,6 +78,9 @@ class KeystoneV2Service(BaseService):
         self.register(BaseService.DELETE,
                       KeystoneV2Service.USER_ID_PATH_REGEX,
                       KeystoneV2Service.handle_delete_user_by_id)
+        self.register(BaseService.POST,
+                      KeystoneV2Service.USER_ID_KSADM_CREDENTIAL_PATH_REGEX,
+                      KeystoneV2Service.handle_add_credentials_to_user)
         self.log_info('initialized')
 
     @property
@@ -262,7 +281,8 @@ class KeystoneV2Service(BaseService):
         current_user = self.model.get_user_by_id(user_data['tenantid'],
                                                  user_data['userid'])
 
-        req_body = request.body.decode('utf-8')
+        req_body = request.body.decode('utf-8') if hasattr(
+            request.body, 'decode') else request.body
         json_data = json.loads(req_body)
 
         try:
@@ -299,7 +319,7 @@ class KeystoneV2Service(BaseService):
                 password=password,
                 enabled=enabled)
 
-            return (201, headers, 'ok')
+            return (201, headers, '')
 
         except Exception as ex:
             self.log_exception('User Add Failure')
@@ -408,7 +428,8 @@ class KeystoneV2Service(BaseService):
             self.log_exception('Failed to get user id from path')
             return (400, headers, 'bad request')
 
-        req_body = request.body.decode('utf-8')
+        req_body = request.body.decode('utf-8') if hasattr(
+            request.body, 'decode') else request.body
         json_data = json.loads(req_body)
 
         if 'user' not in json_data:
@@ -493,3 +514,71 @@ class KeystoneV2Service(BaseService):
             return (503, headers, 'Server error')
 
         return (204, headers, '')
+
+    def handle_add_credentials_to_user(self, request, uri, headers):
+        '''
+        201 -> Created
+        400 -> Bad Request
+        403 -> Forbidden
+        404 -> Not Found
+        405 -> Invalid Method
+        413 -> Over Limit
+        415 -> Bad Media Type
+        503 -> Service Fault
+        '''
+        self.log_request(uri, request)
+        req_headers = request.headers
+
+        user_data = self.helper_authenticate(req_headers,
+                                             headers,
+                                             True,
+                                             False)
+        if isinstance(user_data, tuple):
+            return user_data
+
+        req_body = request.body.decode('utf-8') if hasattr(
+            request.body, 'decode') else request.body
+        json_data = json.loads(req_body)
+
+        try:
+            password_data = json_data['passwordCredentials']
+
+        except LookupError:
+            self.log_exception('invalid request')
+            return (400, headers, 'bad request')
+
+        try:
+            user_id = KeystoneV2Service.get_user_id_from_path(uri)
+            self.log_debug('Lookup of user id {0} requested'
+                           .format(user_id))
+
+        except Exception as ex:  # pragma: no cover
+            self.log_exception('Failed to get user id from path')
+            return (400, headers, 'bad request')
+
+        try:
+            user_info = self.model.get_user_by_id(user_data['tenantid'],
+                                                  user_id)
+        except:
+            self.log_exception('failed to get user data')
+            return (404, headers, 'Not found')
+
+        for k, v in six.iteritems(password_data):
+            if k in ('username', 'email', 'password', 'apikey'):
+                user_info[k] = v
+            else:
+                self.log_debug('invalid update parameter {0}'.format(k))
+
+        try:
+            self.model.update_user_by_user_id(user_info['tenantid'],
+                                              user_info['userid'],
+                                              user_info['email'],
+                                              user_info['password'],
+                                              user_info['apikey'],
+                                              user_info['enabled'])
+
+        except Exception as ex:  # pragma: no cover
+            self.log_exception('failed to update user')
+            return (503, headers, 'Server error')
+
+        return (201, headers, '')
