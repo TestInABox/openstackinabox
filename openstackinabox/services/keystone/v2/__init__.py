@@ -10,7 +10,9 @@ from six.moves.urllib import parse
 
 from openstackinabox.models.keystone import KeystoneModel
 from openstackinabox.services.base_service import BaseService
-
+from openstackinabox.services.keystone.v2.tenants import (
+    KeystoneV2ServiceTenants
+)
 
 class KeystoneV2Errors(Exception):
     pass
@@ -60,9 +62,11 @@ class KeystoneV2Service(BaseService):
         self.log_info('initializing keystone v2.0 services...')
         self.__model = KeystoneModel()
 
-        self.register(BaseService.GET,
-                      '/tenants',
-                      KeystoneV2Service.handle_list_tenants)
+        self.__subservices = [
+            KeystoneV2ServiceTenants(self),
+        ]
+        self.add_subservices(self.__subservices)
+
         self.register(BaseService.GET,
                       '/users',
                       KeystoneV2Service.handle_list_users)
@@ -83,12 +87,10 @@ class KeystoneV2Service(BaseService):
                       KeystoneV2Service.handle_add_credentials_to_user)
         self.log_info('initialized')
 
-    @property
-    def model(self):
+    def get_model(self):
         return self.__model
 
-    @model.setter
-    def model(self, value):
+    def set_model(self, value):
         if isinstance(value, KeystoneModel):
             self.__model = value
         else:
@@ -138,43 +140,6 @@ class KeystoneV2Service(BaseService):
             return (401, headers, 'Not Authorized')
 
         return user_data
-
-    def handle_list_tenants(self, request, uri, headers):
-        '''
-        200, 203 -> OK
-        400 -> Bad Request: one or more required parameters
-                            are missing or invalid
-        401 -> not authorized
-        403 -> forbidden (no permission)
-        404 -> Not found
-        405 -> Invalid Method
-        413 -> Over Limit - too many items requested
-        503 -> Service Fault
-        '''
-        self.log_request(uri, request)
-        req_headers = request.headers
-
-        user_data = self.helper_authenticate(req_headers, headers, True, True)
-        if isinstance(user_data, tuple):
-            return user_data
-
-        """
-        Body on success:
-        body = {
-            'tenants' : [ {'id': 01234,
-                           'name': 'bob',
-                           'description': 'joe bob',
-                           'enabled': True }]
-            'tenants_links': []
-        }
-        """
-        response_body = {
-            'tenants': [tenant_info
-                        for tenant_info in
-                        self.model.get_tenants()],
-            'tenants_links': []
-        }
-        return (200, headers, json.dumps(response_body))
 
     def handle_list_users(self, request, uri, headers):
         req_headers = request.headers
