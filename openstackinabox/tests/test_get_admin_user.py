@@ -4,17 +4,16 @@ Stack-In-A-Box: Basic Test
 import json
 import unittest
 
-import httpretty
 import mock
 import requests
 import stackinabox.util_httpretty
+import stackinabox.util_requests_mock
 from stackinabox.stack import StackInABox
 
 from openstackinabox.models.keystone.model import KeystoneModel
 from openstackinabox.services.keystone import KeystoneV2Service
 
 
-@httpretty.activate
 class TestKeystoneV2GetAdmin(unittest.TestCase):
 
     def setUp(self):
@@ -50,10 +49,12 @@ class TestKeystoneV2GetAdmin(unittest.TestCase):
             userid=self.user_info['user']['userid'],
             rolename=self.keystone.model.IDENTITY_ADMIN_ROLE)
         StackInABox.register_service(self.keystone)
+        self.session = requests.Session()
 
     def tearDown(self):
         super(TestKeystoneV2GetAdmin, self).tearDown()
         StackInABox.reset_services()
+        self.session.close()
 
     @staticmethod
     def get_userid_url(host, userid):
@@ -61,50 +62,58 @@ class TestKeystoneV2GetAdmin(unittest.TestCase):
                .format(host, userid)
 
     def test_get_admin_user_basic(self):
-        stackinabox.util_httpretty.httpretty_registration('localhost')
+        with stackinabox.util_requests_mock.activate():
+            stackinabox.util_requests_mock.requests_mock_registration(
+                'localhost')
 
-        user_data = self.keystone.model.get_token_by_userid(
-            self.user_info['user']['userid'])
+            user_data = self.keystone.model.get_token_by_userid(
+                self.user_info['user']['userid'])
 
-        url = TestKeystoneV2GetAdmin.get_userid_url(
-            'localhost',
-            self.user_info['user']['userid'])
+            url = TestKeystoneV2GetAdmin.get_userid_url(
+                'localhost',
+                self.user_info['user']['userid'])
 
-        self.headers['x-auth-token'] = user_data['token']
-        res = requests.get(url, headers=self.headers, data='')
-        self.assertEqual(res.status_code, 200)
+            self.headers['x-auth-token'] = user_data['token']
+            res = requests.get(url, headers=self.headers, data='')
+            self.assertEqual(res.status_code, 200)
 
     def test_get_admin_user_incorrect_request(self):
-        stackinabox.util_httpretty.httpretty_registration('localhost')
+        with stackinabox.util_requests_mock.activate():
+            stackinabox.util_requests_mock.requests_mock_registration(
+                'localhost')
 
-        user_data = self.keystone.model.get_token_by_userid(
-            self.user_info['user']['userid'])
+            user_data = self.keystone.model.get_token_by_userid(
+                self.user_info['user']['userid'])
 
-        url = TestKeystoneV2GetAdmin.get_userid_url(
-            'localhost',
-            self.user_info['user']['userid'])
+            url = TestKeystoneV2GetAdmin.get_userid_url(
+                'localhost',
+                self.user_info['user']['userid'])
 
-        res = requests.get(url, headers=self.headers, data='')
-        self.assertEqual(res.status_code, 404)
+            res = requests.get(url, headers=self.headers, data='')
+            self.assertEqual(res.status_code, 404)
 
     def test_get_admin_user_no_token(self):
-        stackinabox.util_httpretty.httpretty_registration('localhost')
+        with stackinabox.util_requests_mock.activate():
+            stackinabox.util_requests_mock.requests_mock_registration(
+                'localhost')
 
-        url = TestKeystoneV2GetAdmin.get_userid_url(
-            'localhost',
-            self.user_info['user']['userid'])
+            url = TestKeystoneV2GetAdmin.get_userid_url(
+                'localhost',
+                self.user_info['user']['userid'])
 
-        res = requests.get(url, headers=None, data='')
-        self.assertEqual(res.status_code, 403)
+            res = requests.get(url, headers=None, data='')
+            self.assertEqual(res.status_code, 403)
 
     def test_get_admin_user_invalid_token(self):
-        stackinabox.util_httpretty.httpretty_registration('localhost')
-
-        url = TestKeystoneV2GetAdmin.get_userid_url(
-            'localhost',
-            self.user_info['user']['userid'])
-        self.headers['x-auth-token'] = 'new_token'
-        res = requests.get(url, headers=self.headers, data='')
-        self.assertEqual(res.status_code, 401)
+        with stackinabox.util_requests_mock.activate():
+            stackinabox.util_requests_mock.requests_mock_registration(
+                'localhost')
+            
+            url = TestKeystoneV2GetAdmin.get_userid_url(
+                'localhost',
+                self.user_info['user']['userid'])
+            self.headers['x-auth-token'] = 'new_token'
+            res = requests.get(url, headers=self.headers, data='')
+            self.assertEqual(res.status_code, 401)
 
     
