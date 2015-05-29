@@ -107,12 +107,9 @@ class TestKeystoneV2GetAdmin(unittest.TestCase):
         with stackinabox.util_requests_mock.activate():
             stackinabox.util_requests_mock.requests_mock_registration(
                 'localhost')
-            
             url = TestKeystoneV2GetAdmin.get_userid_url(
                 'localhost',
                 self.user_info['user']['userid'])
             self.headers['x-auth-token'] = 'new_token'
             res = requests.get(url, headers=self.headers, data='')
             self.assertEqual(res.status_code, 401)
-
-    

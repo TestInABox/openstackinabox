@@ -43,7 +43,8 @@ class KeystoneV2Service(BaseService):
         .format(USER_ID_REGEX))
 
     USER_ID_APIKEY_RESET_PATH_REGEX = re.compile(
-        '^\/users\/{0}/OS-KSADM/credentials/RAX-KSKEY:apiKeyCredentials/RAX-AUTH/reset$'
+        '^\/users\/{0}/OS-KSADM/credentials/RAX-KSKEY:apiKeyCredentials'
+        '/RAX-AUTH/reset$'
         .format(USER_ID_REGEX))
 
     @staticmethod
@@ -661,7 +662,7 @@ class KeystoneV2Service(BaseService):
         user_info['RAX-AUTH:DomainID'] = user_info['tenantid']
 
         return (200, headers, json.dumps(user_info))
-    
+
     def handle_get_user_credentials(self, request, uri, headers):
         '''
             200, 203 -> OK
@@ -712,7 +713,7 @@ class KeystoneV2Service(BaseService):
         try:
             user_info = self.model.get_user_by_id(user_data['tenantid'],
                                                   user_id)
-        except: #pragma: no cover
+        except:   # pragma: no cover
             self.log_exception('failed to get user data')
             return (404, headers, 'Not found')
 
@@ -780,21 +781,21 @@ class KeystoneV2Service(BaseService):
             self.log_exception('failed to get user data')
             return (404, headers, 'Not found')
 
-        user_info['apikey'] = '123456789abcd'     
+        user_info['apikey'] = '123456789abcd'
 
         try:
-            self.model.update_user_by_user_id(user_info['tenantid'], user_info['userid'],
-                                              user_info['apikey'])
+            self.model.update_user_by_user_id(user_info['tenantid'],
+                user_info['userid'],
+                user_info['apikey'])
         except Exception as ex:  # pragma: no cover
-           self.log_exception('failed to update user')
-           return (503, headers, 'Server error')
+            self.log_exception('failed to update user')
+            return (503, headers, 'Server error')
 
-        response = {
-           "RAX-KSKEY:apiKeyCredentials": {
+        response = {"RAX-KSKEY:apiKeyCredentials":
+            {
                 "username": user_info['username'],
                 "apikey": user_info['apikey']
-             }
+            }
         }
         json_data = json.dumps(response)
         return (200, headers, json_data)
-

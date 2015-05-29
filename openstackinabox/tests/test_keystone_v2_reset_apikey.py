@@ -38,7 +38,8 @@ class TestResetAPIKeys(unittest.TestCase):
                                              'password'],
                                          enabled=self.user_info['user'][
                                              'enabled'],
-                                         apikey=self.user_info['user']['apikey'])
+                                         apikey=self.user_info['user']
+                                         ['apikey'])
         self.keystone.model.add_token(self.tenant_id,
                                       self.user_info['user']['userid'])
         self.keystone.model.add_user_role_by_rolename(
@@ -55,8 +56,9 @@ class TestResetAPIKeys(unittest.TestCase):
 
     @staticmethod
     def get_userid_url(host, userid):
-        return 'http://{0}/keystone/v2.0/users/{1}/OS-KSADM/credentials/RAX-KSKEY:apiKeyCredentials/RAX-AUTH/reset'\
-               .format(host, userid)
+        return 'http://{0}/keystone/v2.0/users/{1}/OS-KSADM/credentials/'\
+            'RAX-KSKEY:apiKeyCredentials/RAX-AUTH/reset'\
+            .format(host, userid)
 
     def test_reset_apikey_basic(self):
         with stackinabox.util_requests_mock.activate():

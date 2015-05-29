@@ -326,7 +326,7 @@ class KeystoneModel(BaseModel):
 
     @property
     def get_admin_user_details(self):
-        return self.get_user_by_id(self.__admin_tenant_id, 
+        return self.get_user_by_id(self.__admin_tenant_id,
             self.__admin_user_id)
 
     def init_database(self):

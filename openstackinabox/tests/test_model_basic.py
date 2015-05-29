@@ -41,8 +41,8 @@ class TestKeystoneModel(unittest.TestCase):
                 'localhost')
             tenant_details = self.keystone.model.get_admin_tenant_details
             self.assertEqual(tenant_details['name'], 'system')
-            self.assertEqual(tenant_details['description'], 
-                'system administrator')
+            self.assertEqual(tenant_details['description'],
+            'system administrator')
 
     def test_get_user_details(self):
         with stackinabox.util_requests_mock.activate():
