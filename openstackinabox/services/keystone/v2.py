@@ -536,7 +536,8 @@ class KeystoneV2Service(BaseService):
         if isinstance(user_data, tuple):
             return user_data
 
-        req_body = request.body.decode('utf-8')
+        req_body = request.body.decode('utf-8') if hasattr(
+            request.body, 'decode') else request.body
         json_data = json.loads(req_body)
 
         try:
