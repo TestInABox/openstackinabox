@@ -322,19 +322,11 @@ class KeystoneModel(BaseModel):
 
     @property
     def get_admin_tenant_details(self):
-        return self.__admin_tenant_args
+        return self.get_tenant_by_id(self.__admin_tenant_id)
 
     @property
     def get_admin_user_details(self):
-        return self.__admin_user_args
-
-    def get_admin_tenant_details_by_id(self, tenantid):
-        tenant_details = self.get_tenant_by_id(self, tenantid)
-        return tenant_details
-
-    def get_admin_user_details_by_id(self, tenantid, userid):
-        user_details = self.get_user_by_id(self, tenantid, userid)
-        return user_details
+        return self.get_user_by_id(self.__admin_tenant_id, self.__admin_user_id)
 
     def init_database(self):
         self.log_info('Initializing database')
@@ -345,14 +337,12 @@ class KeystoneModel(BaseModel):
         # Create an admin user and add the admin token to that user
         self.__admin_tenant_id = self.add_tenant('system',
                                                  'system administrator')
-        self.add_admin_tenant_details()
 
         self.__admin_user_id = self.add_user(self.__admin_tenant_id,
                                              'system',
                                              'system@stackinabox',
                                              'stackinabox',
                                              '537461636b496e41426f78')
-        self.add_admin_user_details()
 
         roles = [
             KeystoneModel.IDENTITY_ADMIN_ROLE,

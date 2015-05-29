@@ -23,7 +23,6 @@ class TestKeystoneModel(unittest.TestCase):
         self.headers = {
             'x-auth-token': self.keystone.model.get_admin_token()
         }
-        StackInABox.register_service(self.keystone)
 
     def tearDown(self):
         super(TestKeystoneModel, self).tearDown()
@@ -35,11 +34,13 @@ class TestKeystoneModel(unittest.TestCase):
 
         self.keystone.model = KeystoneModel()
 
-    def test_add_user(self):
+    def test_get_tenant_details(self):
         stackinabox.util_httpretty.httpretty_registration('localhost')
         tenant_details = self.keystone.model.get_admin_tenant_details
         self.assertEqual(tenant_details['name'], 'system')
         self.assertEqual(tenant_details['description'], 'system administrator')
+
+    def test_get_user_details(self):
         user_details = self.keystone.model.get_admin_user_details
         self.assertEqual(user_details['username'], 'system')
         self.assertEqual(user_details['email'], 'system@stackinabox')
