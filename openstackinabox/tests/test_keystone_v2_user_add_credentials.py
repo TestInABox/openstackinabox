@@ -5,17 +5,15 @@ Stack-In-A-Box: Add Credentials to User
 import json
 import unittest
 
-import httpretty
 import mock
 import requests
-import stackinabox.util_httpretty
+import stackinabox.util_requests_mock
 from stackinabox.stack import StackInABox
 
 from openstackinabox.models.keystone.model import KeystoneModel
 from openstackinabox.services.keystone import KeystoneV2Service
 
 
-@httpretty.activate
 class TestKeystoneV2UserAddCredentials(unittest.TestCase):
 
     def setUp(self):
@@ -61,133 +59,145 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
                .format(host, userid)
 
     def test_user_add_credentials_basic(self):
-        stackinabox.util_httpretty.httpretty_registration('localhost')
+        with stackinabox.util_requests_mock.activate():
+            stackinabox.util_requests_mock.requests_mock_registration(
+                'localhost')
 
-        user_data = self.keystone.model.get_token_by_userid(
-            self.user_info['user']['userid'])
+            user_data = self.keystone.model.get_token_by_userid(
+                self.user_info['user']['userid'])
 
-        url = TestKeystoneV2UserAddCredentials.get_userid_url(
-            'localhost',
-            self.user_info['user']['userid'])
+            url = TestKeystoneV2UserAddCredentials.get_userid_url(
+                'localhost',
+                self.user_info['user']['userid'])
 
-        user_info = {
-            'passwordCredentials': {
-                'username': self.user_info['user']['username'],
-                'password': 'Tr1n1tyR0ck$'
+            user_info = {
+                'passwordCredentials': {
+                    'username': self.user_info['user']['username'],
+                    'password': 'Tr1n1tyR0ck$'
+                }
             }
-        }
 
-        json_data = json.dumps(user_info)
-        self.headers['x-auth-token'] = user_data['token']
-        res = requests.post(url,
-                            headers=self.headers,
-                            data=json_data)
-        self.assertEqual(res.status_code, 201)
+            json_data = json.dumps(user_info)
+            self.headers['x-auth-token'] = user_data['token']
+            res = requests.post(url,
+                                headers=self.headers,
+                                data=json_data)
+            self.assertEqual(res.status_code, 201)
 
     def test_user_add_credentials_too_many_parameters(self):
-        stackinabox.util_httpretty.httpretty_registration('localhost')
+        with stackinabox.util_requests_mock.activate():
+            stackinabox.util_requests_mock.requests_mock_registration(
+                'localhost')
 
-        user_data = self.keystone.model.get_token_by_userid(
-            self.user_info['user']['userid'])
+            user_data = self.keystone.model.get_token_by_userid(
+                self.user_info['user']['userid'])
 
-        url = TestKeystoneV2UserAddCredentials.get_userid_url(
-            'localhost',
-            self.user_info['user']['userid'])
+            url = TestKeystoneV2UserAddCredentials.get_userid_url(
+                'localhost',
+                self.user_info['user']['userid'])
 
-        user_info = {
-            'passwordCredentials': {
-                'enabled': False,
-                'username': self.user_info['user']['username'],
-                'password': 'Tr1n1tyR0ck$'
+            user_info = {
+                'passwordCredentials': {
+                    'enabled': False,
+                    'username': self.user_info['user']['username'],
+                    'password': 'Tr1n1tyR0ck$'
+                }
             }
-        }
 
-        json_data = json.dumps(user_info)
-        self.headers['x-auth-token'] = user_data['token']
-        res = requests.post(url,
-                            headers=self.headers,
-                            data=json_data)
-        self.assertEqual(res.status_code, 201)
+            json_data = json.dumps(user_info)
+            self.headers['x-auth-token'] = user_data['token']
+            res = requests.post(url,
+                                headers=self.headers,
+                                data=json_data)
+            self.assertEqual(res.status_code, 201)
 
     def test_user_add_credentials_no_token(self):
-        stackinabox.util_httpretty.httpretty_registration('localhost')
+        with stackinabox.util_requests_mock.activate():
+            stackinabox.util_requests_mock.requests_mock_registration(
+                'localhost')
 
-        url = TestKeystoneV2UserAddCredentials.get_userid_url(
-            'localhost',
-            self.user_info['user']['userid'])
+            url = TestKeystoneV2UserAddCredentials.get_userid_url(
+                'localhost',
+                self.user_info['user']['userid'])
 
-        user_info = {
-            'passwordCredentials': {
-                'username': self.user_info['user']['username'],
-                'password': 'Tr1n1tyR0ck$'
+            user_info = {
+                'passwordCredentials': {
+                    'username': self.user_info['user']['username'],
+                    'password': 'Tr1n1tyR0ck$'
+                }
             }
-        }
 
-        json_data = json.dumps(user_info)
-        res = requests.post(url, headers=None, data=json_data)
-        self.assertEqual(res.status_code, 403)
+            json_data = json.dumps(user_info)
+            res = requests.post(url, headers=None, data=json_data)
+            self.assertEqual(res.status_code, 403)
 
     def test_user_add_credentials_invalid_token(self):
-        stackinabox.util_httpretty.httpretty_registration('localhost')
+        with stackinabox.util_requests_mock.activate():
+            stackinabox.util_requests_mock.requests_mock_registration(
+                'localhost')
 
-        url = TestKeystoneV2UserAddCredentials.get_userid_url(
-            'localhost',
-            self.user_info['user']['userid'])
+            url = TestKeystoneV2UserAddCredentials.get_userid_url(
+                'localhost',
+                self.user_info['user']['userid'])
 
-        user_info = {
-            'passwordCredentials': {
-                'username': self.user_info['user']['username'],
-                'password': 'Tr1n1tyR0ck$'
+            user_info = {
+                'passwordCredentials': {
+                    'username': self.user_info['user']['username'],
+                    'password': 'Tr1n1tyR0ck$'
+                }
             }
-        }
 
-        json_data = json.dumps(user_info)
-        self.headers['x-auth-token'] = 'new_token'
-        res = requests.post(url,
-                            headers=self.headers,
-                            data=json_data)
-        self.assertEqual(res.status_code, 401)
+            json_data = json.dumps(user_info)
+            self.headers['x-auth-token'] = 'new_token'
+            res = requests.post(url,
+                                headers=self.headers,
+                                data=json_data)
+            self.assertEqual(res.status_code, 401)
 
     def test_user_add_credentials_invalid_token(self):
-        stackinabox.util_httpretty.httpretty_registration('localhost')
+        with stackinabox.util_requests_mock.activate():
+            stackinabox.util_requests_mock.requests_mock_registration(
+                'localhost')
 
-        url = TestKeystoneV2UserAddCredentials.get_userid_url(
-            'localhost',
-            self.user_info['user']['userid'])
+            url = TestKeystoneV2UserAddCredentials.get_userid_url(
+                'localhost',
+                self.user_info['user']['userid'])
 
-        user_info = {
-            'credentials': {
-                'username': self.user_info['user']['username'],
-                'password': 'Tr1n1tyR0ck$'
+            user_info = {
+                'credentials': {
+                    'username': self.user_info['user']['username'],
+                    'password': 'Tr1n1tyR0ck$'
+                }
             }
-        }
 
-        json_data = json.dumps(user_info)
-        res = requests.post(url,
-                            headers=self.headers,
-                            data=json_data)
-        self.assertEqual(res.status_code, 400)
+            json_data = json.dumps(user_info)
+            res = requests.post(url,
+                                headers=self.headers,
+                                data=json_data)
+            self.assertEqual(res.status_code, 400)
 
     def test_user_add_credentials_invalid_user_id(self):
-        stackinabox.util_httpretty.httpretty_registration('localhost')
+        with stackinabox.util_requests_mock.activate():
+            stackinabox.util_requests_mock.requests_mock_registration(
+                'localhost')
 
-        user_data = self.keystone.model.get_token_by_userid(
-            self.user_info['user']['userid'])
+            user_data = self.keystone.model.get_token_by_userid(
+                self.user_info['user']['userid'])
 
-        url = TestKeystoneV2UserAddCredentials.get_userid_url(
-            'localhost',
-            (int(self.user_info['user']['userid']) + 1))
+            url = TestKeystoneV2UserAddCredentials.get_userid_url(
+                'localhost',
+                (int(self.user_info['user']['userid']) + 1))
 
-        user_info = {
-            'passwordCredentials': {
-                'username': self.user_info['user']['username'],
-                'password': 'Tr1n1tyR0ck$'
+            user_info = {
+                'passwordCredentials': {
+                    'username': self.user_info['user']['username'],
+                    'password': 'Tr1n1tyR0ck$'
+                }
             }
-        }
 
-        json_data = json.dumps(user_info)
-        self.headers['x-auth-token'] = user_data['token']
-        res = requests.post(url,
-                            headers=self.headers,
-                            data=json_data)
-        self.assertEqual(res.status_code, 404)
+            json_data = json.dumps(user_info)
+            self.headers['x-auth-token'] = user_data['token']
+            res = requests.post(url,
+                                headers=self.headers,
+                                data=json_data)
+            self.assertEqual(res.status_code, 404)

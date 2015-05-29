@@ -292,7 +292,8 @@ class KeystoneV2Service(BaseService):
         current_user = self.model.get_user_by_id(user_data['tenantid'],
                                                  user_data['userid'])
 
-        req_body = request.body.decode('utf-8')
+        req_body = request.body.decode('utf-8') if hasattr(
+            request.body, 'decode') else request.body
         json_data = json.loads(req_body)
 
         try:
@@ -438,7 +439,8 @@ class KeystoneV2Service(BaseService):
             self.log_exception('Failed to get user id from path')
             return (400, headers, 'bad request')
 
-        req_body = request.body.decode('utf-8')
+        req_body = request.body.decode('utf-8') if hasattr(
+            request.body, 'decode') else request.body
         json_data = json.loads(req_body)
 
         if 'user' not in json_data:
@@ -545,7 +547,8 @@ class KeystoneV2Service(BaseService):
         if isinstance(user_data, tuple):
             return user_data
 
-        req_body = request.body.decode('utf-8')
+        req_body = request.body.decode('utf-8') if hasattr(
+            request.body, 'decode') else request.body
         json_data = json.loads(req_body)
 
         try:
