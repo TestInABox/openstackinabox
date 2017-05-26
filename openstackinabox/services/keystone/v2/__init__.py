@@ -10,25 +10,14 @@ from six.moves.urllib import parse
 
 from openstackinabox.models.keystone import KeystoneModel
 from openstackinabox.services.base_service import BaseService
+from openstackinabox.services.keystone.v2.base import KeystoneV2ServiceBase
+from openstackinabox.services.keystone.v2.exceptions import *
+from openstackinabox.services.keystone.v2.tenants import (
+    KeystoneV2ServiceTenants
+)
 
 
-class KeystoneV2Errors(Exception):
-    pass
-
-
-class KeystoneV2AuthError(Exception):
-    pass
-
-
-class KeystoneV2AuthForbiddenError(KeystoneV2AuthError):
-    pass
-
-
-class KeystoneV2AuthUnauthorizedError(KeystoneV2AuthError):
-    pass
-
-
-class KeystoneV2Service(BaseService):
+class KeystoneV2Service(KeystoneV2ServiceBase):
 
     # USER_ID_PATH_REGEX = re.compile('^\/users\/[a-zA-Z]+[\w\.@-]*$')
     USER_ID_REGEX = '([0-9]+)'
@@ -59,10 +48,21 @@ class KeystoneV2Service(BaseService):
         super(KeystoneV2Service, self).__init__('keystone/v2.0')
         self.log_info('initializing keystone v2.0 services...')
         self.__model = KeystoneModel()
+        self.__subservices = [
+            {
+                'path': re.compile('^/tenants'),
+                'service': KeystoneV2ServiceTenants(self.__model)
+            }
+        ]
+        for subservice in self.__subservices:
+            self.register_subservice(
+                subservice['path'],
+                subservice['service']
+            )
 
-        self.register(BaseService.GET,
-                      '/tenants',
-                      KeystoneV2Service.handle_list_tenants)
+        # self.register(BaseService.GET,
+        #              '/tenants',
+        #              KeystoneV2Service.handle_list_tenants)
         self.register(BaseService.GET,
                       '/users',
                       KeystoneV2Service.handle_list_users)
@@ -93,88 +93,6 @@ class KeystoneV2Service(BaseService):
             self.__model = value
         else:
             raise TypeError('model is not an instance of KeystoneModel')
-
-    def helper_validate_token(self, request_headers,
-                              enforce_admin, service_admin):
-        if 'x-auth-token' not in request_headers:
-            raise KeystoneV2AuthForbiddenError('no auth token')
-
-        try:
-            auth_token = request_headers['x-auth-token']
-            user_data = None
-            if service_admin:
-                user_data = self.model.validate_token_service_admin(auth_token)
-
-            elif enforce_admin:
-                user_data = self.model.validate_token_admin(auth_token)
-
-            else:
-                user_data = self.model.validate_token(auth_token)
-
-            self.log_debug('token {0} maps to tenant {1} and userid {2}'
-                           .format(auth_token,
-                                   user_data['tenantid'],
-                                   user_data['userid']))
-        except Exception as ex:
-            raise KeystoneV2AuthUnauthorizedError(
-                'invalid or expired auth token')
-
-        return user_data
-
-    def helper_authenticate(self, request_headers, headers,
-                            enforce_admin, service_admin):
-
-        try:
-            user_data = self.helper_validate_token(request_headers,
-                                                   enforce_admin,
-                                                   service_admin)
-
-        except KeystoneV2AuthForbiddenError:
-            self.log_exception('no token')
-            return (403, headers, 'Forbidden')
-
-        except KeystoneV2AuthUnauthorizedError:
-            self.log_exception('invalid or expired token')
-            return (401, headers, 'Not Authorized')
-
-        return user_data
-
-    def handle_list_tenants(self, request, uri, headers):
-        '''
-        200, 203 -> OK
-        400 -> Bad Request: one or more required parameters
-                            are missing or invalid
-        401 -> not authorized
-        403 -> forbidden (no permission)
-        404 -> Not found
-        405 -> Invalid Method
-        413 -> Over Limit - too many items requested
-        503 -> Service Fault
-        '''
-        self.log_request(uri, request)
-        req_headers = request.headers
-
-        user_data = self.helper_authenticate(req_headers, headers, True, True)
-        if isinstance(user_data, tuple):
-            return user_data
-
-        """
-        Body on success:
-        body = {
-            'tenants' : [ {'id': 01234,
-                           'name': 'bob',
-                           'description': 'joe bob',
-                           'enabled': True }]
-            'tenants_links': []
-        }
-        """
-        response_body = {
-            'tenants': [tenant_info
-                        for tenant_info in
-                        self.model.get_tenants()],
-            'tenants_links': []
-        }
-        return (200, headers, json.dumps(response_body))
 
     def handle_list_users(self, request, uri, headers):
         req_headers = request.headers
