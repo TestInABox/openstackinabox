@@ -10,17 +10,13 @@ class KeystoneV2ServiceTenants(KeystoneV2ServiceBase):
 
     def __init__(self, model):
         super(KeystoneV2ServiceTenants, self).__init__('keystone/v2.0/tenants')
-        self.__model = model
+        self.model = model
 
         self.register(
             BaseService.GET,
             '/tenants',
             KeystoneV2ServiceTenants.handle_listing
         )
-
-    @property
-    def model(self):
-        return self.__model
 
     def handle_listing(self, request, uri, headers):
         '''
