@@ -6,7 +6,7 @@ import unittest
 
 import mock
 import requests
-import stackinabox.util_requests_mock
+import stackinabox.util.requests_mock.core
 from stackinabox.stack import StackInABox
 
 from openstackinabox.models.keystone.model import KeystoneModel
@@ -49,8 +49,8 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
         StackInABox.reset_services()
 
     def test_user_update_no_token(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             json_data = json.dumps(self.user_info)
             res = requests.post('http://localhost/keystone/v2.0/users/{0}'
@@ -59,8 +59,8 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
             self.assertEqual(res.status_code, 403)
 
     def test_user_update_invalid_token(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             json_data = json.dumps(self.user_info)
             self.headers['x-auth-token'] = 'new_token'
@@ -71,8 +71,8 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
             self.assertEqual(res.status_code, 401)
 
     def test_user_update_no_user(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             json_data = json.dumps(self.user_info)
             user_data = self.keystone.model.get_token_by_userid(
@@ -85,8 +85,8 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
             self.assertEqual(res.status_code, 400)
 
     def test_user_update_no_user_id(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             json_data = json.dumps(self.user_info)
             user_data = self.keystone.model.get_token_by_userid(
@@ -99,8 +99,8 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
             self.assertEqual(res.status_code, 400)
 
     def test_user_update_invalid_user_id(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             json_data = json.dumps(self.user_info)
             user_data = self.keystone.model.get_token_by_userid(
@@ -118,8 +118,8 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
             self.assertEqual(res.status_code, 404)
 
     def test_user_update(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             json_data = json.dumps(self.user_info)
             user_data = self.keystone.model.get_token_by_userid(
@@ -136,8 +136,8 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
             self.assertEqual(res.status_code, 200)
 
     def test_user_update_no_enabled(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             json_data = json.dumps(self.user_info)
             user_data = self.keystone.model.get_token_by_userid(
@@ -154,8 +154,8 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
             self.assertEqual(res.status_code, 200)
 
     def test_user_update_no_email(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             json_data = json.dumps(self.user_info)
             user_data = self.keystone.model.get_token_by_userid(
@@ -172,8 +172,8 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
             self.assertEqual(res.status_code, 200)
 
     def test_user_update_no_password(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             json_data = json.dumps(self.user_info)
             user_data = self.keystone.model.get_token_by_userid(
