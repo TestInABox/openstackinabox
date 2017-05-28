@@ -1,180 +1,40 @@
-"""
-OpenStack Keystone v2 Service
-"""
 import json
 import re
-import uuid
 
 import six
 from six.moves.urllib import parse
 
-from openstackinabox.models.keystone import KeystoneModel
 from openstackinabox.services.base_service import BaseService
+from openstackinabox.services.keystone.v2.base import KeystoneV2ServiceBase
+from openstackinabox.services.keystone.v2.exceptions import *
 
 
-class KeystoneV2Errors(Exception):
-    pass
+class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
 
+    def __init__(self, model):
+        super(KeystoneV2ServiceUsers, self).__init__('keystone/v2.0/users')
+        self.model = model
 
-class KeystoneV2AuthError(Exception):
-    pass
-
-
-class KeystoneV2AuthForbiddenError(KeystoneV2AuthError):
-    pass
-
-
-class KeystoneV2AuthUnauthorizedError(KeystoneV2AuthError):
-    pass
-
-
-class KeystoneV2Service(BaseService):
-
-    # USER_ID_PATH_REGEX = re.compile('^\/users\/[a-zA-Z]+[\w\.@-]*$')
-    USER_ID_REGEX = '([0-9]+)'
-    USER_ID_PATH_REGEX = re.compile('^\/users\/{0}$'
-                                    .format(USER_ID_REGEX))
-    USER_ID_KSADM_CREDENTIAL_PATH_REGEX = re.compile(
-        '^\/users\/{0}/OS-KSADM/credentials$'
-        .format(USER_ID_REGEX))
-
-    @staticmethod
-    def get_user_id_from_path(uri_path):
-        uri_matcher = None
-
-        regexes = [
-            KeystoneV2Service.USER_ID_PATH_REGEX,
-            KeystoneV2Service.USER_ID_KSADM_CREDENTIAL_PATH_REGEX,
-        ]
-
-        for r in regexes:
-            uri_matcher = r.match(uri_path)
-            if uri_matcher is not None:
-                break
-
-        userid = uri_matcher.groups()[0]
-        return userid
-
-    def __init__(self):
-        super(KeystoneV2Service, self).__init__('keystone/v2.0')
-        self.log_info('initializing keystone v2.0 services...')
-        self.__model = KeystoneModel()
-
-        self.register(BaseService.GET,
-                      '/tenants',
-                      KeystoneV2Service.handle_list_tenants)
         self.register(BaseService.GET,
                       '/users',
-                      KeystoneV2Service.handle_list_users)
+                      KeystoneV2ServiceUsers.handle_list_users)
         self.register(BaseService.POST,
                       '/users',
-                      KeystoneV2Service.handle_add_user)
+                      KeystoneV2ServiceUsers.handle_add_user)
         self.register(BaseService.GET,
-                      KeystoneV2Service.USER_ID_PATH_REGEX,
-                      KeystoneV2Service.handle_get_user_by_id)
+                      KeystoneV2ServiceUsers.USER_ID_PATH_REGEX,
+                      KeystoneV2ServiceUsers.handle_get_user_by_id)
         self.register(BaseService.POST,
-                      KeystoneV2Service.USER_ID_PATH_REGEX,
-                      KeystoneV2Service.handle_update_user_by_id)
+                      KeystoneV2ServiceUsers.USER_ID_PATH_REGEX,
+                      KeystoneV2ServiceUsers.handle_update_user_by_id)
         self.register(BaseService.DELETE,
-                      KeystoneV2Service.USER_ID_PATH_REGEX,
-                      KeystoneV2Service.handle_delete_user_by_id)
-        self.register(BaseService.POST,
-                      KeystoneV2Service.USER_ID_KSADM_CREDENTIAL_PATH_REGEX,
-                      KeystoneV2Service.handle_add_credentials_to_user)
-        self.log_info('initialized')
-
-    @property
-    def model(self):
-        return self.__model
-
-    @model.setter
-    def model(self, value):
-        if isinstance(value, KeystoneModel):
-            self.__model = value
-        else:
-            raise TypeError('model is not an instance of KeystoneModel')
-
-    def helper_validate_token(self, request_headers,
-                              enforce_admin, service_admin):
-        if 'x-auth-token' not in request_headers:
-            raise KeystoneV2AuthForbiddenError('no auth token')
-
-        try:
-            auth_token = request_headers['x-auth-token']
-            user_data = None
-            if service_admin:
-                user_data = self.model.validate_token_service_admin(auth_token)
-
-            elif enforce_admin:
-                user_data = self.model.validate_token_admin(auth_token)
-
-            else:
-                user_data = self.model.validate_token(auth_token)
-
-            self.log_debug('token {0} maps to tenant {1} and userid {2}'
-                           .format(auth_token,
-                                   user_data['tenantid'],
-                                   user_data['userid']))
-        except Exception as ex:
-            raise KeystoneV2AuthUnauthorizedError(
-                'invalid or expired auth token')
-
-        return user_data
-
-    def helper_authenticate(self, request_headers, headers,
-                            enforce_admin, service_admin):
-
-        try:
-            user_data = self.helper_validate_token(request_headers,
-                                                   enforce_admin,
-                                                   service_admin)
-
-        except KeystoneV2AuthForbiddenError:
-            self.log_exception('no token')
-            return (403, headers, 'Forbidden')
-
-        except KeystoneV2AuthUnauthorizedError:
-            self.log_exception('invalid or expired token')
-            return (401, headers, 'Not Authorized')
-
-        return user_data
-
-    def handle_list_tenants(self, request, uri, headers):
-        '''
-        200, 203 -> OK
-        400 -> Bad Request: one or more required parameters
-                            are missing or invalid
-        401 -> not authorized
-        403 -> forbidden (no permission)
-        404 -> Not found
-        405 -> Invalid Method
-        413 -> Over Limit - too many items requested
-        503 -> Service Fault
-        '''
-        self.log_request(uri, request)
-        req_headers = request.headers
-
-        user_data = self.helper_authenticate(req_headers, headers, True, True)
-        if isinstance(user_data, tuple):
-            return user_data
-
-        """
-        Body on success:
-        body = {
-            'tenants' : [ {'id': 01234,
-                           'name': 'bob',
-                           'description': 'joe bob',
-                           'enabled': True }]
-            'tenants_links': []
-        }
-        """
-        response_body = {
-            'tenants': [tenant_info
-                        for tenant_info in
-                        self.model.get_tenants()],
-            'tenants_links': []
-        }
-        return (200, headers, json.dumps(response_body))
+                      KeystoneV2ServiceUsers.USER_ID_PATH_REGEX,
+                      KeystoneV2ServiceUsers.handle_delete_user_by_id)
+        self.register(
+            BaseService.POST,
+            KeystoneV2ServiceUsers.USER_ID_KSADM_CREDENTIAL_PATH_REGEX,
+            KeystoneV2ServiceUsers.handle_add_credentials_to_user
+        )
 
     def handle_list_users(self, request, uri, headers):
         req_headers = request.headers
@@ -368,7 +228,7 @@ class KeystoneV2Service(BaseService):
             return user_data
 
         try:
-            user_id = KeystoneV2Service.get_user_id_from_path(uri)
+            user_id = KeystoneV2ServiceUsers.get_user_id_from_path(uri)
             self.log_debug('Lookup of user id {0} requested'
                            .format(user_id))
 
@@ -420,7 +280,7 @@ class KeystoneV2Service(BaseService):
             return user_data
 
         try:
-            user_id = KeystoneV2Service.get_user_id_from_path(uri)
+            user_id = KeystoneV2ServiceUsers.get_user_id_from_path(uri)
             self.log_debug('Lookup of user id {0} requested'
                            .format(user_id))
 
@@ -490,7 +350,7 @@ class KeystoneV2Service(BaseService):
             return user_data
 
         try:
-            user_id = KeystoneV2Service.get_user_id_from_path(uri)
+            user_id = KeystoneV2ServiceUsers.get_user_id_from_path(uri)
             self.log_debug('Lookup of user id {0} requested'
                            .format(user_id))
 
@@ -548,7 +408,7 @@ class KeystoneV2Service(BaseService):
             return (400, headers, 'bad request')
 
         try:
-            user_id = KeystoneV2Service.get_user_id_from_path(uri)
+            user_id = KeystoneV2ServiceUsers.get_user_id_from_path(uri)
             self.log_debug('Lookup of user id {0} requested'
                            .format(user_id))
 
