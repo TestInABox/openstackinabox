@@ -7,7 +7,7 @@ import unittest
 
 import mock
 import requests
-import stackinabox.util_requests_mock
+import stackinabox.util.requests_mock.core
 from stackinabox.stack import StackInABox
 
 from openstackinabox.models.keystone.model import KeystoneModel
@@ -59,8 +59,8 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
                .format(host, userid)
 
     def test_user_add_credentials_basic(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
 
             user_data = self.keystone.model.get_token_by_userid(
@@ -85,8 +85,8 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
             self.assertEqual(res.status_code, 201)
 
     def test_user_add_credentials_too_many_parameters(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
 
             user_data = self.keystone.model.get_token_by_userid(
@@ -112,8 +112,8 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
             self.assertEqual(res.status_code, 201)
 
     def test_user_add_credentials_no_token(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
 
             url = TestKeystoneV2UserAddCredentials.get_userid_url(
@@ -132,8 +132,8 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
             self.assertEqual(res.status_code, 403)
 
     def test_user_add_credentials_invalid_token(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
 
             url = TestKeystoneV2UserAddCredentials.get_userid_url(
@@ -155,8 +155,8 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
             self.assertEqual(res.status_code, 401)
 
     def test_user_add_credentials_invalid_token(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
 
             url = TestKeystoneV2UserAddCredentials.get_userid_url(
@@ -177,8 +177,8 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
             self.assertEqual(res.status_code, 400)
 
     def test_user_add_credentials_invalid_user_id(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
 
             user_data = self.keystone.model.get_token_by_userid(

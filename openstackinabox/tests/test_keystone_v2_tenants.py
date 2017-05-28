@@ -6,7 +6,7 @@ import unittest
 
 import mock
 import requests
-import stackinabox.util_requests_mock
+import stackinabox.util.requests_mock.core
 from stackinabox.stack import StackInABox
 
 from openstackinabox.models.keystone.model import KeystoneModel
@@ -28,16 +28,16 @@ class TestKeystoneV2Tenants(unittest.TestCase):
         StackInABox.reset_services()
 
     def test_tenant_listing_no_token(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
 
             res = requests.get('http://localhost/keystone/v2.0/tenants')
             self.assertEqual(res.status_code, 403)
 
     def test_tenant_listing_invalid_token(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
 
             self.headers['x-auth-token'] = 'new_token'
@@ -46,8 +46,8 @@ class TestKeystoneV2Tenants(unittest.TestCase):
             self.assertEqual(res.status_code, 401)
 
     def test_tenant_listing(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
 
             res = requests.get('http://localhost/keystone/v2.0/tenants',

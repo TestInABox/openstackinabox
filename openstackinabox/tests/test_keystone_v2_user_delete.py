@@ -6,7 +6,7 @@ import unittest
 
 import mock
 import requests
-import stackinabox.util_requests_mock
+import stackinabox.util.requests_mock.core
 from stackinabox.stack import StackInABox
 
 from openstackinabox.models.keystone.model import KeystoneModel
@@ -36,16 +36,16 @@ class TestKeystoneV2UserDelete(unittest.TestCase):
         StackInABox.reset_services()
 
     def test_user_delete_no_token(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             res = requests.delete(
                 'http://localhost/keystone/v2.0/users/1234567890')
             self.assertEqual(res.status_code, 403)
 
     def test_user_delete_invalid_token(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             self.headers['x-auth-token'] = 'new_token'
             res = requests.delete(
@@ -54,8 +54,8 @@ class TestKeystoneV2UserDelete(unittest.TestCase):
             self.assertEqual(res.status_code, 401)
 
     def test_user_delete_bad_request(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             neo_tenant_id = self.keystone.model.add_tenant(
                 tenantname='neo',
@@ -81,8 +81,8 @@ class TestKeystoneV2UserDelete(unittest.TestCase):
             self.assertEqual(res.status_code, 404)
 
     def test_user_delete(self):
-        with stackinabox.util_requests_mock.activate():
-            stackinabox.util_requests_mock.requests_mock_registration(
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             neo_tenant_id = self.keystone.model.add_tenant(
                 tenantname='neo',
