@@ -7,6 +7,8 @@ matrix:
           env: TEST_SUITE=suite_pypy TOX_ENV=pypy
         - python: "3.4"
           env: TEST_SUITE=suite_3_4 TOX_ENV=py34
+        - python: "3.5"
+          env: TEST_SUITE=suite_3_5 TOX_ENV=py35
         - python: "3.4"
           env: TEST_SUITE=suite_3_4 TOX_ENV=pep8
 

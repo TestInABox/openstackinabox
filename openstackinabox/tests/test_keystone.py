@@ -6,7 +6,6 @@ import unittest
 
 import mock
 import requests
-import stackinabox.util_requests_mock
 from stackinabox.stack import StackInABox
 
 from openstackinabox.models.keystone.model import KeystoneModel
