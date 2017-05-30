@@ -18,31 +18,6 @@ class KeystoneV2ServiceTokens(KeystoneV2ServiceBase):
             KeystoneV2ServiceTokens.handle_authenticate
         )
 
-    """
-    def make_service_catalog(self, user_data):
-        return {
-            'access': {
-                'serviceCatalog': [
-                    {
-                        'name': None,
-                        'endpoints': [
-                            {
-                                'region': None,  # optional (but used by most)
-                                'tenantId': None,
-                                'publicURL': None,
-                                'internalURL': None,  # optional
-                                'versionInfo': None,  # optional
-                                'versionList': None,  # optioanl
-                                'versionId': None  # optional
-                            }
-                        ],
-                        'type': None
-                    }
-                ],
-            }
-        }
-    """
-
     def handle_authenticate(self, request, uri, headers):
         '''
         POST /tokens
@@ -111,11 +86,7 @@ class KeystoneV2ServiceTokens(KeystoneV2ServiceBase):
                 return (400, headers, "Invalid request")
 
             response_body = {
-                'access': {
-                    'token': user_data['token'],
-                    'serviceCatalog': [],
-                    'user': user_data['user']
-                }
+                'access': user_data
             }
             return (200, headers, json.dumps(response_body))
 

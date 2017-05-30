@@ -820,6 +820,61 @@ class KeystoneModel(BaseModel):
 
         raise KeystoneInvalidTokenError('Not the service admin token')
 
+    def get_auth_token_entry(self, token_data, user_data):
+        return {
+            'id': token_data['token'],
+            'expires': token_data['expires'],
+            'tenant': {
+                'id': user_data['tenantid'],
+                'name': user_data['username']
+                # 'RAX-AUTH:authenticatedBy': [
+                #    None
+                # ]
+            }
+        }
+
+    def get_auth_user_entry(self, user_data):
+        return {
+            'id': user_data['userid'],
+            'roles': [
+                {
+                    'id': role['roleid'],
+                    # 'serviceId': None,
+                    # 'description': None,
+                    'name': role['rolename']
+                }
+                for role in self.get_roles_for_user(
+                    tenantid=user_data['tenantid'],
+                    userid=user_data['userid']
+                )
+            ],
+            'name': user_data['username'],
+            # 'RAX-AUTH:defaultRegion': None
+        }
+
+    def get_auth_service_catalog(self, user_data):
+        return []
+        """
+        TODO(BenjamenMeyer): actually build the catalog
+        return [
+            {
+                'name': None,
+                'endpoints': [
+                    {
+                        'region': None,  # optional (but used by most)
+                        'tenantId': None,
+                        'publicURL': None,
+                        'internalURL': None,  # optional
+                        'versionInfo': None,  # optional
+                        'versionList': None,  # optioanl
+                        'versionId': None  # optional
+                    }
+                ],
+                'type': None
+            }
+        ]
+        """
+
     def password_authenticate(self, password_data):
         if not self.validate_username(password_data['username']):
             self.log_error('Username Validation Failed')
@@ -859,34 +914,9 @@ class KeystoneModel(BaseModel):
         )
 
         return {
-            'token': {
-                'id': token['token'],
-                'expires': token['expires'],
-                'tenant': {
-                    'id': user['tenantid'],
-                    'name': user['username']
-                    # 'RAX-AUTH:authenticatedBy': [
-                    #    None
-                    # ]
-                }
-            },
-            'user': {
-                'id': user['userid'],
-                'roles': [
-                    {
-                        'id': role['roleid'],
-                        # 'serviceId': None,
-                        # 'description': None,
-                        'name': role['rolename']
-                    }
-                    for role in self.get_roles_for_user(
-                        tenantid=user['tenantid'],
-                        userid=user['userid']
-                    )
-                ],
-                'name': user['username'],
-                # 'RAX-AUTH:defaultRegion': None
-            }
+            'serviceCatalog': self.get_auth_service_catalog(user),
+            'token': self.get_auth_token_entry(token, user),
+            'user': self.get_auth_user_entry(user)
         }
 
     def apikey_authenticate(self, apikey_data):
@@ -928,32 +958,7 @@ class KeystoneModel(BaseModel):
         )
 
         return {
-            'token': {
-                'id': token['token'],
-                'expires': token['expires'],
-                'tenant': {
-                    'id': user['tenantid'],
-                    'name': user['username']
-                    # 'RAX-AUTH:authenticatedBy': [
-                    #    None
-                    # ]
-                }
-            },
-            'user': {
-                'id': user['userid'],
-                'roles': [
-                    {
-                        'id': role['roleid'],
-                        # 'serviceId': None,
-                        # 'description': None,
-                        'name': role['rolename']
-                    }
-                    for role in self.get_roles_for_user(
-                        tenantid=user['tenantid'],
-                        userid=user['userid']
-                    )
-                ],
-                'name': user['username'],
-                # 'RAX-AUTH:defaultRegion': None
-            }
+            'serviceCatalog': self.get_auth_service_catalog(user),
+            'token': self.get_auth_token_entry(token, user),
+            'user': self.get_auth_user_entry(user)
         }
