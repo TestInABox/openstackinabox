@@ -24,3 +24,7 @@ class BaseModel(object):
     def log_exception(self, msg):
         logger.exception('{0} ({1}): {2}'
                          .format(self.name, id(self), msg))
+
+    def log_error(self, msg):
+        logger.error('{0} ({1}): {2}'
+                     .format(self.name, id(self), msg))

@@ -7,8 +7,10 @@ import re
 import sqlite3
 import uuid
 
+import six
 
 from openstackinabox.models.base_model import *
+from openstackinabox.models.keystone.exceptions import *
 
 
 """
@@ -19,7 +21,6 @@ from openstackinabox.models.base_model import *
     - Authentication
 
     POST /v2.0/users
-
 
     POST /v2.0/tokens/
     DELETE /v2.0/tokens/{token}
@@ -132,11 +133,24 @@ SQL_GET_MAX_USER_ID = '''
     FROM keystone_users
 '''
 
-SQL_GET_USER_BY_USERNAME = '''
+SQL_GET_USER_BY_USERNAME_AND_TENANT = '''
     SELECT tenantid, userid, username, email, password, apikey, enabled
     FROM keystone_users
     WHERE tenantid = :tenantid AND
           username = :username
+'''
+
+SQL_GET_USER_BY_TENANT_ONLY = '''
+    SELECT tenantid, userid, username, email, password, apikey, enabled
+    FROM keystone_users
+    WHERE tenantid = :tenantid AND
+          username = :username
+'''
+
+SQL_GET_USER_BY_USERNAME_ONLY = '''
+    SELECT tenantid, userid, username, email, password, apikey, enabled
+    FROM keystone_users
+    WHERE username = :username
 '''
 
 SQL_GET_USER_BY_USERID = '''
@@ -240,42 +254,6 @@ SQL_GET_ROLES_FOR_USER = '''
       AND keystone_user_roles.tenantid = :tenantid
       AND keystone_user_roles.userid = :userid
 '''
-
-
-class KeystoneError(BaseModelExceptions):
-    pass
-
-
-class KeystoneTenantError(KeystoneError):
-    pass
-
-
-class KeystoneUserError(KeystoneError):
-    pass
-
-
-class KeystoneUnknownUserError(KeystoneUserError):
-    pass
-
-
-class KeystoneTokenError(KeystoneError):
-    pass
-
-
-class KeystoneInvalidTokenError(KeystoneTokenError):
-    pass
-
-
-class KeystoneRevokedTokenError(KeystoneInvalidTokenError):
-    pass
-
-
-class KeystoneExpiredTokenError(KeystoneInvalidTokenError):
-    pass
-
-
-class KeystoneRoleError(KeystoneError):
-    pass
 
 
 class KeystoneModel(BaseModel):
@@ -528,7 +506,7 @@ class KeystoneModel(BaseModel):
             'tenantid': tenantid,
             'username': username
         }
-        dbcursor.execute(SQL_GET_USER_BY_USERNAME, args)
+        dbcursor.execute(SQL_GET_USER_BY_USERNAME_AND_TENANT, args)
         user_data = dbcursor.fetchone()
         if user_data is None:
             raise KeystoneUnknownUserError('Invalid tenantid or username')
@@ -542,6 +520,28 @@ class KeystoneModel(BaseModel):
             'apikey': user_data[5],
             'enabled': KeystoneModel.bool_from_database(user_data[6])
         }
+
+    def get_user_by_name_or_tenantid(self, tenantid=None, username=None):
+        sql_query = None
+        args = {}
+        if username is not None:
+            sql_query = SQL_GET_USER_BY_USERNAME_ONLY
+            args['username'] = username
+        else:
+            sql_query = SQL_GET_USER_BY_TENANT_ONLY
+            args['tenantid'] = tenantid
+
+        dbcursor = self.database.cursor()
+        for user_data in dbcursor.execute(sql_query, args):
+            yield {
+                'tenantid': user_data[0],
+                'userid': user_data[1],
+                'username': user_data[2],
+                'email': user_data[3],
+                'password': user_data[4],
+                'apikey': user_data[5],
+                'enabled': KeystoneModel.bool_from_database(user_data[6])
+            }
 
     def update_user_by_user_id(self, tenantid=None, userid=None, email=None,
                                password=None, apikey=None, enabled=True):
@@ -582,7 +582,7 @@ class KeystoneModel(BaseModel):
     def add_token(self, tenantid=None, userid=None,
                   expire_time=None, token=None):
         if token is None:
-            token = uuid.uuid4()
+            token = self.make_token()
 
         dbcursor = self.database.cursor()
         args = {
@@ -819,3 +819,141 @@ class KeystoneModel(BaseModel):
             self.log_exception('Error: {0}'.format(ex))
 
         raise KeystoneInvalidTokenError('Not the service admin token')
+
+    def password_authenticate(self, password_data):
+        if not self.validate_username(password_data['username']):
+            self.log_error('Username Validation Failed')
+            raise KeystoneUserError('Invalid User Data - Username')
+
+        if not self.validate_password(password_data['password']):
+            self.log_error('Password Validation Failed')
+            raise KeystoneUserError('Invalid User Data - Password')
+
+        user = None
+        user_counter = 0
+        for user_data in self.get_user_by_name_or_tenantid(
+            username=password_data['username']
+        ):
+            user_counter = user_counter + 1
+            if user_data['password'] == password_data['password']:
+                user = user_data
+                break
+
+        if user is None:
+            if user_counter:
+                raise KeystoneUserInvalidPasswordError('Bad Password')
+
+            else:
+                raise KeystoneUnknownUserError('Unable to locate user')
+
+        if user['enabled'] is False:
+            raise KeystoneDisabledUserError('User is disabled')
+
+        self.add_token(
+            tenantid=user['tenantid'],
+            userid=user['userid'],
+        )
+
+        token = self.get_token_by_userid(
+            user['userid']
+        )
+
+        return {
+            'token': {
+                'id': token['token'],
+                'expires': token['expires'],
+                'tenant': {
+                    'id': user['tenantid'],
+                    'name': user['username']
+                    # 'RAX-AUTH:authenticatedBy': [
+                    #    None
+                    # ]
+                }
+            },
+            'user': {
+                'id': user['userid'],
+                'roles': [
+                    {
+                        'id': role['roleid'],
+                        # 'serviceId': None,
+                        # 'description': None,
+                        'name': role['rolename']
+                    }
+                    for role in self.get_roles_for_user(
+                        tenantid=user['tenantid'],
+                        userid=user['userid']
+                    )
+                ],
+                'name': user['username'],
+                # 'RAX-AUTH:defaultRegion': None
+            }
+        }
+
+    def apikey_authenticate(self, apikey_data):
+        if not self.validate_username(apikey_data['username']):
+            self.log_error('Username Validation Failed')
+            raise KeystoneUserError('Invalid User Data - Username')
+
+        if not isinstance(apikey_data['apiKey'], six.string_types):
+            self.log_error('API Key Validation Failed')
+            raise KeystoneUserError('Invalid User Data - API Key')
+
+        user = None
+        user_counter = 0
+        for user_data in self.get_user_by_name_or_tenantid(
+            username=apikey_data['username']
+        ):
+            user_counter = user_counter + 1
+            if user_data['apikey'] == apikey_data['apiKey']:
+                user = user_data
+                break
+
+        if user is None:
+            if user_counter:
+                raise KeystoneUserInvalidApiKeyError('Bad API Key')
+
+            else:
+                raise KeystoneUnknownUserError('Unable to locate user')
+
+        if user['enabled'] is False:
+            raise KeystoneDisabledUserError('User is disabled')
+
+        self.add_token(
+            tenantid=user['tenantid'],
+            userid=user['userid'],
+        )
+
+        token = self.get_token_by_userid(
+            user['userid']
+        )
+
+        return {
+            'token': {
+                'id': token['token'],
+                'expires': token['expires'],
+                'tenant': {
+                    'id': user['tenantid'],
+                    'name': user['username']
+                    # 'RAX-AUTH:authenticatedBy': [
+                    #    None
+                    # ]
+                }
+            },
+            'user': {
+                'id': user['userid'],
+                'roles': [
+                    {
+                        'id': role['roleid'],
+                        # 'serviceId': None,
+                        # 'description': None,
+                        'name': role['rolename']
+                    }
+                    for role in self.get_roles_for_user(
+                        tenantid=user['tenantid'],
+                        userid=user['userid']
+                    )
+                ],
+                'name': user['username'],
+                # 'RAX-AUTH:defaultRegion': None
+            }
+        }
