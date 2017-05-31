@@ -24,7 +24,7 @@ class TestKeystoneV2AuthPassword(unittest.TestCase):
         self.keystone = KeystoneV2Service()
         self.username = 'user_{0}'.format(str(uuid.uuid4()))
         self.password = 'pAss{0}'.format(
-            str(uuid.uuid4()).replace('-','')
+            str(uuid.uuid4()).replace('-', '')
         )
         self.apikey = str(uuid.uuid4())
         self.email = '{0}@stackinabox.mock'.format(self.username)

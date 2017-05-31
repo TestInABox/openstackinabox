@@ -26,7 +26,7 @@ class TestKeystoneV2AuthApiKey(unittest.TestCase):
         self.keystone = KeystoneV2Service()
         self.username = 'user_{0}'.format(str(uuid.uuid4()))
         self.password = 'pAss{0}'.format(
-            str(uuid.uuid4()).replace('-','')
+            str(uuid.uuid4()).replace('-', '')
         )
         self.apikey = str(uuid.uuid4())
         self.email = '{0}@stackinabox.mock'.format(self.username)
@@ -95,7 +95,7 @@ class TestKeystoneV2AuthApiKey(unittest.TestCase):
     )
     @ddt.unpack
     def test_apikey_auth_bad_value(self, whats_invalid,
-                                     expected_status_code):
+                                   expected_status_code):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
