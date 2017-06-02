@@ -18,6 +18,9 @@ from openstackinabox.services.keystone.v2.tenants import (
 from openstackinabox.services.keystone.v2.users import (
     KeystoneV2ServiceUsers
 )
+from openstackinabox.services.keystone.v2.tokens import (
+    KeystoneV2ServiceTokens
+)
 
 
 class KeystoneV2Service(KeystoneV2ServiceBase):
@@ -34,6 +37,10 @@ class KeystoneV2Service(KeystoneV2ServiceBase):
             {
                 'path': re.compile('^/users'),
                 'service': KeystoneV2ServiceUsers(self.model)
+            },
+            {
+                'path': re.compile('^/tokens'),
+                'service': KeystoneV2ServiceTokens(self.model)
             }
         ]
         for subservice in self.__subservices:

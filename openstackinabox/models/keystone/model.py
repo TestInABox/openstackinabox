@@ -1,14 +1,17 @@
 """
 OpenStack Keystone Model
 """
+import copy
 import datetime
 import random
 import re
 import sqlite3
 import uuid
 
+import six
 
 from openstackinabox.models.base_model import *
+from openstackinabox.models.keystone.exceptions import *
 
 
 """
@@ -19,7 +22,6 @@ from openstackinabox.models.base_model import *
     - Authentication
 
     POST /v2.0/users
-
 
     POST /v2.0/tokens/
     DELETE /v2.0/tokens/{token}
@@ -132,11 +134,23 @@ SQL_GET_MAX_USER_ID = '''
     FROM keystone_users
 '''
 
-SQL_GET_USER_BY_USERNAME = '''
+SQL_GET_USER_BY_USERNAME_AND_TENANT = '''
     SELECT tenantid, userid, username, email, password, apikey, enabled
     FROM keystone_users
     WHERE tenantid = :tenantid AND
           username = :username
+'''
+
+SQL_GET_USER_BY_TENANT_ONLY = '''
+    SELECT tenantid, userid, username, email, password, apikey, enabled
+    FROM keystone_users
+    WHERE tenantid = :tenantid
+'''
+
+SQL_GET_USER_BY_USERNAME_ONLY = '''
+    SELECT tenantid, userid, username, email, password, apikey, enabled
+    FROM keystone_users
+    WHERE username = :username
 '''
 
 SQL_GET_USER_BY_USERID = '''
@@ -209,6 +223,12 @@ SQL_RESET_REVOKED_TOKEN = '''
       AND userid = :userid
 '''
 
+SQL_DELETE_TOKEN = '''
+    DELETE FROM keystone_tokens
+    WHERE tenantid = :tenantid
+      AND userid = :userid
+'''
+
 SQL_VALIDATE_TOKEN = '''
     SELECT tenantid, userid, token, ttl, revoked
     FROM keystone_tokens
@@ -242,42 +262,6 @@ SQL_GET_ROLES_FOR_USER = '''
 '''
 
 
-class KeystoneError(BaseModelExceptions):
-    pass
-
-
-class KeystoneTenantError(KeystoneError):
-    pass
-
-
-class KeystoneUserError(KeystoneError):
-    pass
-
-
-class KeystoneUnknownUserError(KeystoneUserError):
-    pass
-
-
-class KeystoneTokenError(KeystoneError):
-    pass
-
-
-class KeystoneInvalidTokenError(KeystoneTokenError):
-    pass
-
-
-class KeystoneRevokedTokenError(KeystoneInvalidTokenError):
-    pass
-
-
-class KeystoneExpiredTokenError(KeystoneInvalidTokenError):
-    pass
-
-
-class KeystoneRoleError(KeystoneError):
-    pass
-
-
 class KeystoneModel(BaseModel):
 
     IDENTITY_ADMIN_ROLE = 'identity:user-admin'
@@ -291,7 +275,7 @@ class KeystoneModel(BaseModel):
 
     @staticmethod
     def make_token():
-        return uuid.uuid4()
+        return str(uuid.uuid4())
 
     @staticmethod
     def bool_from_database(value):
@@ -348,6 +332,25 @@ class KeystoneModel(BaseModel):
         self.log_debug('Username {0} is valid'.format(username))
         return True
 
+    def validate_tenant_name(self, tenant_name):
+        self.log_debug('Validating tenant name {0}'.format(tenant_name))
+        regex = re.compile('^[a-zA-Z]+[\w\.@-]*$')
+        if regex.match(tenant_name) is None:
+            self.log_debug('tenant name {0} is INVALID'.format(tenant_name))
+            return False
+
+        self.log_debug('Username {0} is valid'.format(tenant_name))
+        return True
+
+    def validate_tenant_id(self, tenant_id):
+        self.log_debug('Validating tenant id {0}'.format(tenant_id))
+        if not isinstance(tenant_id, int):
+            self.log_debug('tenant id {0} is INVALID'.format(tenant_id))
+            return False
+
+        self.log_debug('Tenant ID {0} is valid'.format(tenant_id))
+        return True
+
     def validate_password(self, password):
         self.log_debug('Validating password {0}'.format(password))
         regexes = [
@@ -365,6 +368,12 @@ class KeystoneModel(BaseModel):
 
         self.log_debug('password {0} is valid'.format(password))
         return True
+
+    def validate_apikey(self, apikey):
+        return isinstance(apikey, six.string_types)
+
+    def validate_token(self, token):
+        return isinstance(token, six.string_types)
 
     def get_admin_token(self):
         return self.__admin_token
@@ -528,7 +537,7 @@ class KeystoneModel(BaseModel):
             'tenantid': tenantid,
             'username': username
         }
-        dbcursor.execute(SQL_GET_USER_BY_USERNAME, args)
+        dbcursor.execute(SQL_GET_USER_BY_USERNAME_AND_TENANT, args)
         user_data = dbcursor.fetchone()
         if user_data is None:
             raise KeystoneUnknownUserError('Invalid tenantid or username')
@@ -542,6 +551,28 @@ class KeystoneModel(BaseModel):
             'apikey': user_data[5],
             'enabled': KeystoneModel.bool_from_database(user_data[6])
         }
+
+    def get_user_by_name_or_tenantid(self, tenantid=None, username=None):
+        sql_query = None
+        args = {}
+        if username is not None:
+            sql_query = SQL_GET_USER_BY_USERNAME_ONLY
+            args['username'] = username
+        else:
+            sql_query = SQL_GET_USER_BY_TENANT_ONLY
+            args['tenantid'] = tenantid
+
+        dbcursor = self.database.cursor()
+        for user_data in dbcursor.execute(sql_query, args):
+            yield {
+                'tenantid': user_data[0],
+                'userid': user_data[1],
+                'username': user_data[2],
+                'email': user_data[3],
+                'password': user_data[4],
+                'apikey': user_data[5],
+                'enabled': KeystoneModel.bool_from_database(user_data[6])
+            }
 
     def update_user_by_user_id(self, tenantid=None, userid=None, email=None,
                                password=None, apikey=None, enabled=True):
@@ -582,7 +613,7 @@ class KeystoneModel(BaseModel):
     def add_token(self, tenantid=None, userid=None,
                   expire_time=None, token=None):
         if token is None:
-            token = uuid.uuid4()
+            token = self.make_token()
 
         dbcursor = self.database.cursor()
         args = {
@@ -624,6 +655,20 @@ class KeystoneModel(BaseModel):
             dbcursor.execute(SQL_RESET_REVOKED_TOKEN, args)
         else:
             dbcursor.execute(SQL_REVOKE_TOKEN, args)
+
+        if not dbcursor.rowcount:
+            raise KeystoneTokenError(
+                'Unknown tenantid or  userid; or no associated token')
+
+        self.database.commit()
+
+    def delete_token(self, tenantid=None, userid=None):
+        dbcursor = self.database.cursor()
+        args = {
+            'tenantid': tenantid,
+            'userid': userid
+        }
+        dbcursor.execute(SQL_DELETE_TOKEN, args)
 
         if not dbcursor.rowcount:
             raise KeystoneTokenError(
@@ -742,6 +787,17 @@ class KeystoneModel(BaseModel):
             })
         return results
 
+    def check_token_expiration(self, token):
+        if token['revoked']:
+            raise KeystoneRevokedTokenError('Token was revoked')
+        # 2015-02-03 02:30:58
+        expire_time = datetime.datetime.strptime(token['expires'],
+                                                 '%Y-%m-%d %H:%M:%S')
+        now = datetime.datetime.utcnow()
+        if expire_time < now:
+            raise KeystoneExpiredTokenError('Token expired ({0} >= {1})'
+                                            .format(expire_time, now))
+
     def validate_token(self, token):
         dbcursor = self.database.cursor()
         args = {
@@ -759,16 +815,8 @@ class KeystoneModel(BaseModel):
             'expires': token_data[3],
             'revoked': KeystoneModel.bool_from_database(token_data[4])
         }
-        if result['revoked']:
-            raise KeystoneRevokedTokenError('Token was revoked')
-
-        # 2015-02-03 02:30:58
-        expire_time = datetime.datetime.strptime(result['expires'],
-                                                 '%Y-%m-%d %H:%M:%S')
-        now = datetime.datetime.utcnow()
-        if expire_time < now:
-            raise KeystoneExpiredTokenError('Token expired ({0} >= {1})'
-                                            .format(expire_time, now))
+        # side-effects if token revoked or expired
+        self.check_token_expiration(result)
 
         return result
 
@@ -819,3 +867,223 @@ class KeystoneModel(BaseModel):
             self.log_exception('Error: {0}'.format(ex))
 
         raise KeystoneInvalidTokenError('Not the service admin token')
+
+    def get_auth_token_entry(self, token_data, user_data):
+        return {
+            'id': token_data['token'],
+            'expires': token_data['expires'],
+            'tenant': {
+                'id': user_data['tenantid'],
+                'name': user_data['username']
+                # 'RAX-AUTH:authenticatedBy': [
+                #    None
+                # ]
+            }
+        }
+
+    def get_auth_user_entry(self, user_data):
+        return {
+            'id': user_data['userid'],
+            'roles': [
+                {
+                    'id': role['roleid'],
+                    # 'serviceId': None,
+                    # 'description': None,
+                    'name': role['rolename']
+                }
+                for role in self.get_roles_for_user(
+                    tenantid=user_data['tenantid'],
+                    userid=user_data['userid']
+                )
+            ],
+            'name': user_data['username'],
+            # 'RAX-AUTH:defaultRegion': None
+        }
+
+    def get_auth_service_catalog(self, user_data):
+        return []
+        """
+        TODO(BenjamenMeyer): actually build the catalog
+        return [
+            {
+                'name': None,
+                'endpoints': [
+                    {
+                        'region': None,  # optional (but used by most)
+                        'tenantId': None,
+                        'publicURL': None,
+                        'internalURL': None,  # optional
+                        'versionInfo': None,  # optional
+                        'versionList': None,  # optioanl
+                        'versionId': None  # optional
+                    }
+                ],
+                'type': None
+            }
+        ]
+        """
+
+    def password_authenticate(self, password_data):
+        if not self.validate_username(password_data['username']):
+            self.log_error('Username Validation Failed')
+            raise KeystoneUserError('Invalid User Data - Username')
+
+        if not self.validate_password(password_data['password']):
+            self.log_error('Password Validation Failed')
+            raise KeystoneUserError('Invalid User Data - Password')
+
+        user = None
+        user_counter = 0
+        for user_data in self.get_user_by_name_or_tenantid(
+            username=password_data['username']
+        ):
+            user_counter = user_counter + 1
+            if user_data['password'] == password_data['password']:
+                user = user_data
+                break
+
+        if user is None:
+            if user_counter:
+                raise KeystoneUserInvalidPasswordError('Bad Password')
+
+            else:
+                raise KeystoneUnknownUserError('Unable to locate user')
+
+        if user['enabled'] is False:
+            raise KeystoneDisabledUserError('User is disabled')
+
+        self.add_token(
+            tenantid=user['tenantid'],
+            userid=user['userid'],
+        )
+
+        token = self.get_token_by_userid(
+            user['userid']
+        )
+
+        return {
+            'serviceCatalog': self.get_auth_service_catalog(user),
+            'token': self.get_auth_token_entry(token, user),
+            'user': self.get_auth_user_entry(user)
+        }
+
+    def apikey_authenticate(self, apikey_data):
+        if not self.validate_username(apikey_data['username']):
+            self.log_error('Username Validation Failed')
+            raise KeystoneUserError('Invalid User Data - Username')
+
+        if not self.validate_apikey(apikey_data['apiKey']):
+            self.log_error('API Key Validation Failed')
+            raise KeystoneUserError('Invalid User Data - API Key')
+
+        user = None
+        user_counter = 0
+        for user_data in self.get_user_by_name_or_tenantid(
+            username=apikey_data['username']
+        ):
+            user_counter = user_counter + 1
+            if user_data['apikey'] == apikey_data['apiKey']:
+                user = user_data
+                break
+
+        if user is None:
+            if user_counter:
+                raise KeystoneUserInvalidApiKeyError('Bad API Key')
+
+            else:
+                raise KeystoneUnknownUserError('Unable to locate user')
+
+        if user['enabled'] is False:
+            raise KeystoneDisabledUserError('User is disabled')
+
+        self.add_token(
+            tenantid=user['tenantid'],
+            userid=user['userid'],
+        )
+
+        token = self.get_token_by_userid(
+            user['userid']
+        )
+
+        return {
+            'serviceCatalog': self.get_auth_service_catalog(user),
+            'token': self.get_auth_token_entry(token, user),
+            'user': self.get_auth_user_entry(user)
+        }
+
+    def tenant_id_token_auth(self, auth_data):
+        try:
+            tenant_id = auth_data['tenantId']
+            token = auth_data['token']['id']
+        except KeyError as ex:
+            raise KeystoneUserError('Invalid user Data - {0}'.format(ex))
+
+        if not self.validate_tenant_id(tenant_id):
+            self.log_error('Username Validation Failed')
+            raise KeystoneUserError('Invalid User Data - Username')
+
+        if not self.validate_token(token):
+            self.log_error('Token Validation Failed')
+            raise KeystoneUserError('Invalid User Data - Token')
+
+        tenant_data = self.get_tenant_by_id(tenantid=tenant_id)
+        if not tenant_data['enabled']:
+            raise KeystoneTenantError('Tenant is disabled')
+
+        user = None
+        user_counter = 0
+        for user_data in self.get_user_by_name_or_tenantid(
+            tenantid=tenant_id
+        ):
+            user_counter = user_counter + 1
+            user = user_data
+
+        if user is None:
+            raise KeystoneUnknownUserError('Unable to locate user')
+
+        if user['enabled'] is False:
+            raise KeystoneDisabledUserError('User is disabled')
+
+        token_data = self.get_token_by_tenantid(tenant_id)
+
+        real_token_data = None
+        for an_entry in token_data:
+            if an_entry['token'] == token:
+                real_token_data = an_entry
+                break
+
+        if real_token_data is None:
+            raise KeystoneInvalidTokenError(
+                'Invalid User Data - Token Mismatch'
+            )
+
+        # side-effects if token revoked or expired
+        self.check_token_expiration(real_token_data)
+
+        return {
+            'serviceCatalog': self.get_auth_service_catalog(user),
+            'token': self.get_auth_token_entry(real_token_data, user),
+            'user': self.get_auth_user_entry(user)
+        }
+
+    def tenant_name_token_auth(self, auth_data):
+        try:
+            tenant_name = auth_data['tenantName']
+            token = auth_data['token']['id']
+        except KeyError as ex:
+            raise KeystoneUserError('Invalid user Data - {0}'.format(ex))
+
+        if not self.validate_tenant_name(tenant_name):
+            self.log_error('Tenant Name Validation Failed')
+            raise KeystoneUserError('Invalid User Data - Tenant Name')
+
+        if not self.validate_token(token):
+            self.log_error('Token Validation Failed')
+            raise KeystoneUserError('Invalid User Data - Token')
+
+        tenant_data = self.get_tenant_by_name(tenantname=tenant_name)
+
+        new_auth_data = copy.deepcopy(auth_data)
+        new_auth_data['tenantId'] = tenant_data['id']
+
+        return self.tenant_id_token_auth(new_auth_data)

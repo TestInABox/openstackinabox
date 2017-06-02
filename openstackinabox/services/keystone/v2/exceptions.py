@@ -1,6 +1,7 @@
 """
 OpenStack Keystone v2 Service Mock Exceptions
 """
+from openstackinabox.models.keystone.exceptions import *
 
 
 class KeystoneV2Errors(Exception):

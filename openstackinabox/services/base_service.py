@@ -23,6 +23,10 @@ class BaseService(StackInABoxService):
         logger.exception('{0} ({1}): {2}'
                          .format(self.name, id(self), msg))
 
+    def log_error(self, msg):
+        logger.error('{0} ({1}): {2}'
+                     .format(self.name, id(self), msg))
+
     def log_request(self, uri, request):
         self.log_debug('Received request {0}'.format(uri))
         self.log_debug('Received headers {0}'.format(request.headers))
