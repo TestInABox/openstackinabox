@@ -54,6 +54,24 @@ class KeystoneV2ServiceTokens(KeystoneV2ServiceBase):
                         'tenantName': None
                     }
                 }
+            4. tenant-id + token
+                {
+                    'auth': {
+                        'tenantId': None,
+                        'token': {
+                            'id': None
+                        }
+                    }
+                }
+            5. tenant-name + token
+                {
+                    'auth': {
+                        'tenantName': None,
+                        'token': {
+                            'id': None
+                        }
+                    }
+                }
 
         200 -> OK + JSON Body w/ Service Catalog
         400 -> Bad Request: one or more required parameters
@@ -82,6 +100,14 @@ class KeystoneV2ServiceTokens(KeystoneV2ServiceBase):
                 user_data = self.model.apikey_authenticate(
                     auth_data['RAX-KSKEY:apiKeyCredentials']
                 )
+            elif 'tenantId' in auth_data:
+                user_data = self.model.tenant_id_token_auth(
+                    auth_data
+                )
+            elif 'tenantName' in auth_data:
+                user_data = self.model.tenant_name_token_auth(
+                    auth_data
+                )
             else:
                 return (400, headers, "Invalid request")
 
@@ -95,6 +121,12 @@ class KeystoneV2ServiceTokens(KeystoneV2ServiceBase):
 
         except KeystoneUserInvalidApiKeyError:
             return (401, headers, "Not Authorized")
+
+        except KeystoneTokenError:
+            return (401, headers, "Not Authorized")
+
+        except KeystoneTenantError:
+            return (403, headers, "Access Forbidden")
 
         except KeystoneDisabledUserError:
             return (403, headers, "Access Forbidden")
