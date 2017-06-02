@@ -131,7 +131,7 @@ class TestKeystoneV2AuthToken(unittest.TestCase):
     )
     @ddt.unpack
     def test_token_auth_bad_value(self, dictKey, attributeName, whats_invalid,
-                                   invalid_how, expected_status_code):
+                                  invalid_how, expected_status_code):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
