@@ -19,9 +19,9 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
         super(TestKeystoneV2UserUpdate, self).setUp()
         self.keystone = KeystoneV2Service()
         self.headers = {
-            'x-auth-token': self.keystone.model.get_admin_token()
+            'x-auth-token': self.keystone.model.tokens.admin_token
         }
-        self.tenant_id = self.keystone.model.add_tenant(tenantname='neo',
+        self.tenant_id = self.keystone.model.tenants.add(tenant_name='neo',
                                                         description='The One')
         self.user_info = {
             'user': {
@@ -31,17 +31,17 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
                 'OS-KSADM:password': 'Inl0veWithNeo'
             }
         }
-        self.user_info['user']['userid'] =\
-            self.keystone.model.add_user(tenantid=self.tenant_id,
-                                         username=self.user_info['user'][
-                                             'username'],
-                                         email=self.user_info['user']['email'],
-                                         password=self.user_info['user'][
-                                             'OS-KSADM:password'],
-                                         enabled=self.user_info['user'][
-                                             'enabled'])
-        self.keystone.model.add_token(self.tenant_id,
-                                      self.user_info['user']['userid'])
+        self.user_info['user']['userid'] = self.keystone.model.users.add(
+            tenant_id=self.tenant_id,
+            username=self.user_info['user']['username'],
+            email=self.user_info['user']['email'],
+            password=self.user_info['user']['OS-KSADM:password'],
+            enabled=self.user_info['user']['enabled']
+        )
+        self.keystone.model.tokens.add(
+            tenant_id=self.tenant_id,
+            user_id=self.user_info['user']['userid']
+        )
         StackInABox.register_service(self.keystone)
 
     def tearDown(self):
@@ -75,7 +75,7 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             json_data = json.dumps(self.user_info)
-            user_data = self.keystone.model.get_token_by_userid(
+            user_data = self.keystone.model.tokens.get_by_user_id(
                 self.user_info['user']['userid'])
             self.headers['x-auth-token'] = user_data['token']
             res = requests.post('http://localhost/keystone/v2.0/users/{0}'
@@ -87,15 +87,20 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
     def test_user_update_no_user_id(self):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
-                'localhost')
+                'localhost'
+            )
             json_data = json.dumps(self.user_info)
-            user_data = self.keystone.model.get_token_by_userid(
-                self.user_info['user']['userid'])
+            user_data = self.keystone.model.tokens.get_by_user_id(
+                self.user_info['user']['userid']
+            )
             self.headers['x-auth-token'] = user_data['token']
-            res = requests.post('http://localhost/keystone/v2.0/users/{0}'
-                                .format(self.user_info['user']['userid']),
-                                headers=self.headers,
-                                data=json.dumps({'user': {}}))
+            res = requests.post(
+                'http://localhost/keystone/v2.0/users/{0}'.format(
+                    self.user_info['user']['userid']
+                ),
+                headers=self.headers,
+                data=json.dumps({'user': {}})
+            )
             self.assertEqual(res.status_code, 400)
 
     def test_user_update_invalid_user_id(self):
@@ -103,7 +108,7 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             json_data = json.dumps(self.user_info)
-            user_data = self.keystone.model.get_token_by_userid(
+            user_data = self.keystone.model.tokens.get_by_user_id(
                 self.user_info['user']['userid'])
             self.headers['x-auth-token'] = user_data['token']
             self.user_info['user']['userid'] = '1234567890'
@@ -122,7 +127,7 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             json_data = json.dumps(self.user_info)
-            user_data = self.keystone.model.get_token_by_userid(
+            user_data = self.keystone.model.tokens.get_by_user_id(
                 self.user_info['user']['userid'])
             self.headers['x-auth-token'] = user_data['token']
             self.user_info['user']['email'] = 'trinity@lost.matrix'
@@ -140,7 +145,7 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             json_data = json.dumps(self.user_info)
-            user_data = self.keystone.model.get_token_by_userid(
+            user_data = self.keystone.model.tokens.get_by_user_id(
                 self.user_info['user']['userid'])
             self.headers['x-auth-token'] = user_data['token']
             self.user_info['user']['email'] = 'trinity@lost.matrix'
@@ -158,7 +163,7 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             json_data = json.dumps(self.user_info)
-            user_data = self.keystone.model.get_token_by_userid(
+            user_data = self.keystone.model.tokens.get_by_user_id(
                 self.user_info['user']['userid'])
             self.headers['x-auth-token'] = user_data['token']
             del self.user_info['user']['email']
@@ -176,7 +181,7 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
             json_data = json.dumps(self.user_info)
-            user_data = self.keystone.model.get_token_by_userid(
+            user_data = self.keystone.model.tokens.get_by_user_id(
                 self.user_info['user']['userid'])
             self.headers['x-auth-token'] = user_data['token']
             self.user_info['user']['email'] = 'trinity@lost.matrix'

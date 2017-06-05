@@ -35,31 +35,31 @@ class TestKeystoneV2AuthToken(unittest.TestCase):
         self.apikey = str(uuid.uuid4())
         self.email = '{0}@stackinabox.mock'.format(self.username)
 
-        self.keystone.model.add_tenant(
-            tenantname=self.tenantname,
+        self.keystone.model.tenants.add(
+            tenant_name=self.tenantname,
             description="test tenant"
         )
-        tenant_data = self.keystone.model.get_tenant_by_name(
-            tenantname=self.tenantname
+        tenant_data = self.keystone.model.tenants.get_by_name(
+            tenant_name=self.tenantname
         )
         self.tenantid = tenant_data['id']
 
-        self.keystone.model.add_user(
-            tenantid=self.tenantid,
+        self.keystone.model.users.add(
+            tenant_id=self.tenantid,
             username=self.username,
             password=self.password,
             apikey=self.apikey,
             email=self.email
         )
-        user_data = self.keystone.model.get_user_by_name(
-            tenantid=self.tenantid,
+        user_data = self.keystone.model.users.get_by_name(
+            tenant_id=self.tenantid,
             username=self.username
         )
-        self.userid = user_data['userid']
-        self.token = self.keystone.model.make_token()
-        self.keystone.model.add_token(
-            tenantid=self.tenantid,
-            userid=self.userid,
+        self.userid = user_data['user_id']
+        self.token = self.keystone.model.tokens.make_token()
+        self.keystone.model.tokens.add(
+            tenant_id=self.tenantid,
+            user_id=self.userid,
             token=self.token
         )
 
@@ -175,8 +175,8 @@ class TestKeystoneV2AuthToken(unittest.TestCase):
     )
     @ddt.unpack
     def test_token_auth_disabled_user(self, dictKey, attributeName):
-        self.keystone.model.update_tenant_status(
-            tenantid=self.tenantid,
+        self.keystone.model.tenants.update_status(
+            tenant_id=self.tenantid,
             enabled=False
         )
 
@@ -205,13 +205,13 @@ class TestKeystoneV2AuthToken(unittest.TestCase):
     )
     @ddt.unpack
     def test_token_auth_invalid_token(self, dictKey, attributeName):
-        self.keystone.model.update_tenant_status(
-            tenantid=self.tenantid,
+        self.keystone.model.tenants.update_status(
+            tenant_id=self.tenantid,
             enabled=False
         )
-        self.keystone.model.delete_token(
-            tenantid=self.tenantid,
-            userid=self.userid
+        self.keystone.model.tokens.delete(
+            tenant_id=self.tenantid,
+            user_id=self.userid
         )
 
         with stackinabox.util.requests_mock.core.activate():
@@ -222,7 +222,7 @@ class TestKeystoneV2AuthToken(unittest.TestCase):
                 'auth': {
                     dictKey: getattr(self, attributeName),
                     'token': {
-                        'id': self.keystone.model.make_token()
+                        'id': self.keystone.model.tokens.make_token()
                     }
                 }
             }

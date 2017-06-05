@@ -19,7 +19,7 @@ class TestKeystoneV2Tenants(unittest.TestCase):
         super(TestKeystoneV2Tenants, self).setUp()
         self.keystone = KeystoneV2Service()
         self.headers = {
-            'x-auth-token': self.keystone.model.get_admin_token()
+            'x-auth-token': self.keystone.model.tokens.admin_token
         }
         StackInABox.register_service(self.keystone)
 
@@ -58,8 +58,10 @@ class TestKeystoneV2Tenants(unittest.TestCase):
             # There is always 1 tenant - the system
             self.assertEqual(len(tenant_data['tenants']), 1)
 
-            self.keystone.model.add_tenant(tenantname='neo',
-                                           description='The One')
+            self.keystone.model.tenants.add(
+                tenant_name='neo',
+                description='The One'
+            )
 
             res = requests.get('http://localhost/keystone/v2.0/tenants',
                                headers=self.headers)

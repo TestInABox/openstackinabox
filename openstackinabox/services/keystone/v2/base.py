@@ -55,6 +55,9 @@ class KeystoneV2ServiceBase(BaseService):
         try:
             auth_token = request_headers['x-auth-token']
             user_data = None
+            self.log_debug('Service Admin Required: {0}'.format(service_admin))
+            self.log_debug('Enforce Admin Required: {0}'.format(enforce_admin))
+
             if service_admin:
                 user_data = self.model.validate_token_service_admin(auth_token)
 
@@ -62,15 +65,20 @@ class KeystoneV2ServiceBase(BaseService):
                 user_data = self.model.validate_token_admin(auth_token)
 
             else:
-                user_data = self.model.validate_token(auth_token)
+                user_data = self.model.tokens.validate_token(auth_token)
 
-            self.log_debug('token {0} maps to tenant {1} and userid {2}'
-                           .format(auth_token,
-                                   user_data['tenantid'],
-                                   user_data['userid']))
+            self.log_debug(
+                'token {0} maps to tenant {1} and userid {2}'.format(
+                    auth_token,
+                    user_data['tenantid'],
+                    user_data['userid']
+                )
+            )
         except Exception as ex:
+            self.log_exception('invalid or expired auth token')
             raise KeystoneV2AuthUnauthorizedError(
-                'invalid or expired auth token')
+                'invalid or expired auth token'
+            )
 
         return user_data
 
@@ -78,9 +86,11 @@ class KeystoneV2ServiceBase(BaseService):
                             enforce_admin, service_admin):
 
         try:
-            user_data = self.helper_validate_token(request_headers,
-                                                   enforce_admin,
-                                                   service_admin)
+            user_data = self.helper_validate_token(
+                request_headers,
+                enforce_admin,
+                service_admin
+            )
 
         except KeystoneV2AuthForbiddenError:
             self.log_exception('no token')

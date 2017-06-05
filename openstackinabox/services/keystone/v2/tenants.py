@@ -48,9 +48,11 @@ class KeystoneV2ServiceTenants(KeystoneV2ServiceBase):
         }
         """
         response_body = {
-            'tenants': [tenant_info
-                        for tenant_info in
-                        self.model.get_tenants()],
+            'tenants': [
+                tenant_info
+                for tenant_info in
+                self.model.tenants.get()
+            ],
             'tenants_links': []
         }
         return (200, headers, json.dumps(response_body))
