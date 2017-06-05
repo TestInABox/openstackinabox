@@ -20,10 +20,12 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
         super(TestKeystoneV2UserAddCredentials, self).setUp()
         self.keystone = KeystoneV2Service()
         self.headers = {
-            'x-auth-token': self.keystone.model.get_admin_token()
+            'x-auth-token': self.keystone.model.tokens.admin_token
         }
-        self.tenant_id = self.keystone.model.add_tenant(tenantname='neo',
-                                                        description='The One')
+        self.tenant_id = self.keystone.model.tenants.add(
+            tenant_name='neo',
+            description='The One'
+        )
         self.user_info = {
             'user': {
                 'username': 'trinity',
@@ -32,21 +34,22 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
                 'password': 'Inl0veWithNeo'
             }
         }
-        self.user_info['user']['userid'] =\
-            self.keystone.model.add_user(tenantid=self.tenant_id,
-                                         username=self.user_info['user'][
-                                             'username'],
-                                         email=self.user_info['user']['email'],
-                                         password=self.user_info['user'][
-                                             'password'],
-                                         enabled=self.user_info['user'][
-                                             'enabled'])
-        self.keystone.model.add_token(self.tenant_id,
-                                      self.user_info['user']['userid'])
-        self.keystone.model.add_user_role_by_rolename(
-            tenantid=self.tenant_id,
-            userid=self.user_info['user']['userid'],
-            rolename=self.keystone.model.IDENTITY_ADMIN_ROLE)
+        self.user_info['user']['userid'] = self.keystone.model.users.add(
+            tenant_id=self.tenant_id,
+            username=self.user_info['user']['username'],
+            email=self.user_info['user']['email'],
+            password=self.user_info['user']['password'],
+            enabled=self.user_info['user']['enabled']
+        )
+        self.keystone.model.tokens.add(
+            tenant_id=self.tenant_id,
+            user_id=self.user_info['user']['userid']
+        )
+        self.keystone.model.roles.add_user_role_by_role_name(
+            tenant_id=self.tenant_id,
+            user_id=self.user_info['user']['userid'],
+            role_name=self.keystone.model.roles.IDENTITY_ADMIN_ROLE
+        )
         StackInABox.register_service(self.keystone)
 
     def tearDown(self):
@@ -63,12 +66,14 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
 
-            user_data = self.keystone.model.get_token_by_userid(
-                self.user_info['user']['userid'])
+            user_data = self.keystone.model.tokens.get_by_user_id(
+                user_id=self.user_info['user']['userid']
+            )
 
             url = TestKeystoneV2UserAddCredentials.get_userid_url(
                 'localhost',
-                self.user_info['user']['userid'])
+                self.user_info['user']['userid']
+            )
 
             user_info = {
                 'passwordCredentials': {
@@ -89,8 +94,9 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
 
-            user_data = self.keystone.model.get_token_by_userid(
-                self.user_info['user']['userid'])
+            user_data = self.keystone.model.tokens.get_by_user_id(
+                self.user_info['user']['userid']
+            )
 
             url = TestKeystoneV2UserAddCredentials.get_userid_url(
                 'localhost',
@@ -134,11 +140,13 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
     def test_user_add_credentials_invalid_token(self):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
-                'localhost')
+                'localhost'
+            )
 
             url = TestKeystoneV2UserAddCredentials.get_userid_url(
                 'localhost',
-                self.user_info['user']['userid'])
+                self.user_info['user']['userid']
+            )
 
             user_info = {
                 'passwordCredentials': {
@@ -149,19 +157,23 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
 
             json_data = json.dumps(user_info)
             self.headers['x-auth-token'] = 'new_token'
-            res = requests.post(url,
-                                headers=self.headers,
-                                data=json_data)
+            res = requests.post(
+                url,
+                headers=self.headers,
+                data=json_data
+            )
             self.assertEqual(res.status_code, 401)
 
     def test_user_add_credentials_invalid_token(self):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
-                'localhost')
+                'localhost'
+            )
 
             url = TestKeystoneV2UserAddCredentials.get_userid_url(
                 'localhost',
-                self.user_info['user']['userid'])
+                self.user_info['user']['userid']
+            )
 
             user_info = {
                 'credentials': {
@@ -181,12 +193,14 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
 
-            user_data = self.keystone.model.get_token_by_userid(
-                self.user_info['user']['userid'])
+            user_data = self.keystone.model.tokens.get_by_user_id(
+                self.user_info['user']['userid']
+            )
 
             url = TestKeystoneV2UserAddCredentials.get_userid_url(
                 'localhost',
-                (int(self.user_info['user']['userid']) + 1))
+                (int(self.user_info['user']['userid']) + 1)
+            )
 
             user_info = {
                 'passwordCredentials': {

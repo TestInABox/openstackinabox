@@ -30,8 +30,8 @@ class TestKeystoneV2AuthPassword(unittest.TestCase):
         self.email = '{0}@stackinabox.mock'.format(self.username)
         self.tenantid = random.randint(100, 10000)
 
-        self.keystone.model.add_user(
-            tenantid=self.tenantid,
+        self.keystone.model.users.add(
+            tenant_id=self.tenantid,
             username=self.username,
             password=self.password,
             apikey=self.apikey,
@@ -138,8 +138,8 @@ class TestKeystoneV2AuthPassword(unittest.TestCase):
     def test_password_auth_disabled_user(self):
         second_user = 'user_{0}'.format(str(uuid.uuid4()))
 
-        self.keystone.model.add_user(
-            tenantid=self.tenantid,
+        self.keystone.model.users.add(
+            tenant_id=self.tenantid,
             username=second_user,
             password=self.password,
             apikey=self.apikey,

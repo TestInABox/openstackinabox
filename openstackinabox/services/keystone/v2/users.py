@@ -49,7 +49,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
         def user_data_filter(user):
             self.log_debug('Filtering data on {0}'.format(user))
             return {
-                'id': user['userid'],
+                'id': user['user_id'],
                 'enabled': user['enabled'],
                 'username': user['username'],
                 'email': user['email'],
@@ -62,19 +62,23 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
             query_data = parse.parse_qs(query)
 
             if 'name' in query_data:
-                user_info = self.model.get_user_by_name(
-                    user_data['tenantid'],
-                    query_data['name'][0])
+                user_info = self.model.users.get_by_name(
+                    tenant_id=user_data['tenantid'],
+                    username=query_data['name'][0]
+                )
                 response_body = {
                     'user': user_data_filter(user_info)
                 }
                 return (200, headers, json.dumps(response_body))
 
         response_body = {
-            'users': [user_data_filter(user_info)
-                      for user_info in
-                      self.model.get_users_for_tenant_id(
-                          user_data['tenantid'])]
+            'users': [
+                user_data_filter(user_info)
+                for user_info in
+                self.model.users.get_for_tenant_id(
+                    user_data['tenantid']
+                )
+            ]
         }
         return (200, headers, json.dumps(response_body))
 
@@ -138,8 +142,10 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
         if isinstance(user_data, tuple):
             return user_data
 
-        current_user = self.model.get_user_by_id(user_data['tenantid'],
-                                                 user_data['userid'])
+        current_user = self.model.users.get_by_id(
+            tenant_id=user_data['tenantid'],
+            user_id=user_data['userid']
+        )
 
         req_body = request.body.decode('utf-8') if hasattr(
             request.body, 'decode') else request.body
@@ -157,7 +163,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
         if username == current_user['username']:
             return (409, headers, 'user already exists')
 
-        if not self.model.validate_username(username):
+        if not self.model.users.validate_username(username):
             self.log_debug('username invalid')
             return (400, headers, 'bad request')
 
@@ -167,17 +173,18 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
             password = None
 
         if password is not None:
-            if not self.model.validate_password(password):
+            if not self.model.users.validate_password(password):
                 self.log_debug('invalid password')
                 return (400, headers, 'bad request')
 
         try:
-            user_info = self.model.add_user(
-                tenantid=current_user['tenantid'],
+            user_info = self.model.users.add(
+                tenant_id=current_user['tenant_id'],
                 username=username,
                 email=email,
                 password=password,
-                enabled=enabled)
+                enabled=enabled
+            )
 
             return (201, headers, '')
 
@@ -237,18 +244,23 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
             return (400, headers, 'bad request')
 
         try:
-            user_info = self.model.get_user_by_id(user_data['tenantid'],
-                                                  user_id)
+            user_info = self.model.users.get_by_id(
+                tenant_id=user_data['tenantid'],
+                user_id=user_id
+            )
 
         except:
-            self.log_exception('failed to lookup user id {1} under tenant '
-                               'id {0}'
-                               .format(user_data['tenantid'], user_id))
+            self.log_exception(
+                'failed to lookup user id {1} under tenant id {0}'.format(
+                    user_data['tenantid'],
+                    user_id
+                )
+            )
             return (404, headers, 'Not Found')
 
         data = {
             'user': {
-                'id': user_info['userid'],
+                'id': user_info['user_id'],
                 'name': user_info['username'],
                 'email': user_info['email'],
                 'enabled': user_info['enabled']
@@ -281,8 +293,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
 
         try:
             user_id = KeystoneV2ServiceUsers.get_user_id_from_path(uri)
-            self.log_debug('Lookup of user id {0} requested'
-                           .format(user_id))
+            self.log_debug('Lookup of user id {0} requested'.format(user_id))
 
         except Exception as ex:  # pragma: no cover
             self.log_exception('Failed to get user id from path')
@@ -300,8 +311,10 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
             return (400, headers, 'bad request')
 
         try:
-            user_info = self.model.get_user_by_id(user_data['tenantid'],
-                                                  user_id)
+            user_info = self.model.users.get_by_id(
+                tenant_id=user_data['tenantid'],
+                user_id=user_id
+            )
         except Exception as ex:
             self.log_exception('failed to get user data')
             return (404, headers, 'Not Found')
@@ -316,12 +329,14 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
             user_info['password'] = json_data['user']['OS-KSADM:password']
 
         try:
-            self.model.update_user_by_user_id(tenantid=user_data['tenantid'],
-                                              userid=user_id,
-                                              email=user_info['email'],
-                                              password=user_info['password'],
-                                              apikey=user_info['apikey'],
-                                              enabled=user_info['enabled'])
+            self.model.users.update_by_id(
+                tenant_id=user_data['tenantid'],
+                user_id=user_id,
+                email=user_info['email'],
+                password=user_info['password'],
+                apikey=user_info['apikey'],
+                enabled=user_info['enabled']
+            )
         except Exception as ex:  # pragma: no cover
             self.log_exception('failed to update user')
             return (503, headers, 'Server error')
@@ -359,15 +374,19 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
             return (400, headers, 'bad request')
 
         try:
-            user_info = self.model.get_user_by_id(user_data['tenantid'],
-                                                  user_id)
+            user_info = self.model.users.get_by_id(
+                tenant_id=user_data['tenantid'],
+                user_id=user_id
+            )
         except Exception as ex:
             self.log_exception('failed to get user data')
             return (404, headers, 'Not Found')
 
         try:
-            self.model.delete_user(tenantid=user_data['tenantid'],
-                                   userid=user_id)
+            self.model.users.delete(
+                tenant_id=user_data['tenantid'],
+                user_id=user_id
+            )
 
         except Exception as ex:  # pragma: no cover
             self.log_exception('failed to delete user')
@@ -409,16 +428,17 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
 
         try:
             user_id = KeystoneV2ServiceUsers.get_user_id_from_path(uri)
-            self.log_debug('Lookup of user id {0} requested'
-                           .format(user_id))
+            self.log_debug('Lookup of user id {0} requested'.format(user_id))
 
         except Exception as ex:  # pragma: no cover
             self.log_exception('Failed to get user id from path')
             return (400, headers, 'bad request')
 
         try:
-            user_info = self.model.get_user_by_id(user_data['tenantid'],
-                                                  user_id)
+            user_info = self.model.users.get_by_id(
+                tenant_id=user_data['tenantid'],
+                user_id=user_id
+            )
         except:
             self.log_exception('failed to get user data')
             return (404, headers, 'Not found')
@@ -430,12 +450,14 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
                 self.log_debug('invalid update parameter {0}'.format(k))
 
         try:
-            self.model.update_user_by_user_id(user_info['tenantid'],
-                                              user_info['userid'],
-                                              user_info['email'],
-                                              user_info['password'],
-                                              user_info['apikey'],
-                                              user_info['enabled'])
+            self.model.users.update_by_id(
+                tenant_id=user_info['tenant_id'],
+                user_id=user_info['user_id'],
+                email=user_info['email'],
+                password=user_info['password'],
+                apikey=user_info['apikey'],
+                enabled=user_info['enabled']
+            )
 
         except Exception as ex:  # pragma: no cover
             self.log_exception('failed to update user')

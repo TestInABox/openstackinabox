@@ -19,7 +19,7 @@ class TestKeystoneV2UserGet(unittest.TestCase):
         super(TestKeystoneV2UserGet, self).setUp()
         self.keystone = KeystoneV2Service()
         self.headers = {
-            'x-auth-token': self.keystone.model.get_admin_token()
+            'x-auth-token': self.keystone.model.tokens.admin_token
         }
         StackInABox.register_service(self.keystone)
 
@@ -31,17 +31,22 @@ class TestKeystoneV2UserGet(unittest.TestCase):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
-            neo_tenant_id = self.keystone.model.add_tenant(
-                tenantname='neo',
+            neo_tenant_id = self.keystone.model.tenants.add(
+                tenant_name='neo',
                 description='The One')
-            tom = self.keystone.model.add_user(neo_tenant_id,
-                                               'tom',
-                                               'tom@theone.matrix',
-                                               'bluepill',
-                                               'iamnottheone',
-                                               enabled=True)
-            self.keystone.model.add_token(neo_tenant_id, tom)
-            user_data = self.keystone.model.get_token_by_userid(tom)
+            tom = self.keystone.model.users.add(
+                tenant_id=neo_tenant_id,
+                username='tom',
+                email='tom@theone.matrix',
+                password='bluepill',
+                apikey='iamnottheone',
+                enabled=True
+            )
+            self.keystone.model.tokens.add(
+                tenant_id=neo_tenant_id,
+                user_id=tom
+            )
+            user_data = self.keystone.model.tokens.get_by_user_id(tom)
 
             url = 'http://localhost/keystone/v2.0/users/{0}'.format(tom)
             res = requests.get(url)
@@ -51,17 +56,23 @@ class TestKeystoneV2UserGet(unittest.TestCase):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
-            neo_tenant_id = self.keystone.model.add_tenant(
-                tenantname='neo',
-                description='The One')
-            tom = self.keystone.model.add_user(neo_tenant_id,
-                                               'tom',
-                                               'tom@theone.matrix',
-                                               'bluepill',
-                                               'iamnottheone',
-                                               enabled=True)
-            self.keystone.model.add_token(neo_tenant_id, tom)
-            user_data = self.keystone.model.get_token_by_userid(tom)
+            neo_tenant_id = self.keystone.model.tenants.add(
+                tenant_name='neo',
+                description='The One'
+            )
+            tom = self.keystone.model.users.add(
+                tenant_id=neo_tenant_id,
+                username='tom',
+                email='tom@theone.matrix',
+                password='bluepill',
+                apikey='iamnottheone',
+                enabled=True
+            )
+            self.keystone.model.tokens.add(
+                tenant_id=neo_tenant_id,
+                user_id=tom
+            )
+            user_data = self.keystone.model.tokens.get_by_user_id(tom)
 
             url = 'http://localhost/keystone/v2.0/users/{0}'.format(tom)
             self.headers['x-auth-token'] = 'new_token'
@@ -72,17 +83,23 @@ class TestKeystoneV2UserGet(unittest.TestCase):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
-            neo_tenant_id = self.keystone.model.add_tenant(
-                tenantname='neo',
-                description='The One')
-            tom = self.keystone.model.add_user(neo_tenant_id,
-                                               'tom',
-                                               'tom@theone.matrix',
-                                               'bluepill',
-                                               'iamnottheone',
-                                               enabled=True)
-            self.keystone.model.add_token(neo_tenant_id, tom)
-            user_data = self.keystone.model.get_token_by_userid(tom)
+            neo_tenant_id = self.keystone.model.tenants.add(
+                tenant_name='neo',
+                description='The One'
+            )
+            tom = self.keystone.model.users.add(
+                tenant_id=neo_tenant_id,
+                username='tom',
+                email='tom@theone.matrix',
+                password='bluepill',
+                apikey='iamnottheone',
+                enabled=True
+            )
+            self.keystone.model.tokens.add(
+                tenant_id=neo_tenant_id,
+                user_id=tom
+            )
+            user_data = self.keystone.model.tokens.get_by_user_id(tom)
 
             url = 'http://localhost/keystone/v2.0/users/{0}'.format(tom + 1)
             self.headers['x-auth-token'] = user_data['token']
@@ -93,17 +110,23 @@ class TestKeystoneV2UserGet(unittest.TestCase):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
-            neo_tenant_id = self.keystone.model.add_tenant(
-                tenantname='neo',
-                description='The One')
-            tom = self.keystone.model.add_user(neo_tenant_id,
-                                               'tom',
-                                               'tom@theone.matrix',
-                                               'bluepill',
-                                               'iamnottheone',
-                                               enabled=True)
-            self.keystone.model.add_token(neo_tenant_id, tom)
-            user_data = self.keystone.model.get_token_by_userid(tom)
+            neo_tenant_id = self.keystone.model.tenants.add(
+                tenant_name='neo',
+                description='The One'
+            )
+            tom = self.keystone.model.users.add(
+                tenant_id=neo_tenant_id,
+                username='tom',
+                email='tom@theone.matrix',
+                password='bluepill',
+                apikey='iamnottheone',
+                enabled=True
+            )
+            self.keystone.model.tokens.add(
+                tenant_id=neo_tenant_id,
+                user_id=tom
+            )
+            user_data = self.keystone.model.tokens.get_by_user_id(tom)
 
             url = 'http://localhost/keystone/v2.0/users/{0}'.format(tom)
             self.headers['x-auth-token'] = user_data['token']

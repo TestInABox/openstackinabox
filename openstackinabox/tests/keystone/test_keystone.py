@@ -18,7 +18,7 @@ class TestHttprettyKeystone(unittest.TestCase):
         super(TestHttprettyKeystone, self).setUp()
         self.keystone = KeystoneV2Service()
         self.headers = {
-            'x-auth-token': self.keystone.model.get_admin_token()
+            'x-auth-token': self.keystone.model.tokens.admin_token
         }
         StackInABox.register_service(self.keystone)
         self.session = requests.Session()
