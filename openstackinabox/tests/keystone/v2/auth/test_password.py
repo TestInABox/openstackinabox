@@ -2,7 +2,6 @@
 Stack-In-A-Box: Basic Test
 """
 import json
-import random
 import unittest
 import uuid
 
@@ -12,37 +11,17 @@ import requests
 import stackinabox.util.requests_mock.core
 from stackinabox.stack import StackInABox
 
-from openstackinabox.models.keystone.model import KeystoneModel
-from openstackinabox.services.keystone import KeystoneV2Service
+from openstackinabox.tests.keystone.v2.auth.base import TestKeystoneV2AuthBase
 
 
 @ddt.ddt
-class TestKeystoneV2AuthPassword(unittest.TestCase):
+class TestKeystoneV2AuthPassword(TestKeystoneV2AuthBase):
 
     def setUp(self):
         super(TestKeystoneV2AuthPassword, self).setUp()
-        self.keystone = KeystoneV2Service()
-        self.username = 'user_{0}'.format(str(uuid.uuid4()))
-        self.password = 'pAss{0}'.format(
-            str(uuid.uuid4()).replace('-', '')
-        )
-        self.apikey = str(uuid.uuid4())
-        self.email = '{0}@stackinabox.mock'.format(self.username)
-        self.tenantid = random.randint(100, 10000)
-
-        self.keystone.model.users.add(
-            tenant_id=self.tenantid,
-            username=self.username,
-            password=self.password,
-            apikey=self.apikey,
-            email=self.email
-        )
-
-        StackInABox.register_service(self.keystone)
 
     def tearDown(self):
         super(TestKeystoneV2AuthPassword, self).tearDown()
-        StackInABox.reset_services()
 
     def test_password_auth(self):
         with stackinabox.util.requests_mock.core.activate():
@@ -65,14 +44,9 @@ class TestKeystoneV2AuthPassword(unittest.TestCase):
             self.assertEqual(res.status_code, 200)
 
             result = res.json()
-            token = result['access']['token']
-            user = result['access']['user']
-            serviceCatalog = result['access']['serviceCatalog']
-
-            self.assertEqual(0, len(serviceCatalog))
-            self.assertEqual(self.tenantid, token['tenant']['id'])
-            self.assertEqual(self.username, token['tenant']['name'])
-            self.assertEqual(self.username, user['name'])
+            self.assertUserData(result)
+            self.assertTokenData(result, tenant_name=self.username)
+            self.assertServiceCatalog(result)
 
     def test_invalid_auth_request(self):
         with stackinabox.util.requests_mock.core.activate():
