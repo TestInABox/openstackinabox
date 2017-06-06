@@ -94,6 +94,16 @@ class TestKeystoneV2AuthToken(unittest.TestCase):
             )
             self.assertEqual(res.status_code, 200)
 
+            result = res.json()
+            token = result['access']['token']
+            user = result['access']['user']
+            serviceCatalog = result['access']['serviceCatalog']
+
+            self.assertEqual(0, len(serviceCatalog))
+            self.assertEqual(self.tenantid, token['tenant']['id'])
+            self.assertEqual(self.username, token['tenant']['name'])
+            self.assertEqual(self.username, user['name'])
+
     @ddt.data(
         ('tenantId', 'tenantid'),
         ('tenantName', 'tenantname')

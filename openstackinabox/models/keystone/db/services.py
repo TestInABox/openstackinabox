@@ -44,7 +44,7 @@ class KeystoneDbServices(KeystoneDbBase):
         }
         dbcursor.execute(SQL_ADD_SERVICE, args)
         if not dbcursor.rowcount:
-            raise KeystoneRoleError('Unable to add service')
+            raise KeystoneServiceCatalogServiceError('Unable to add service')
 
     def get(self, service_id=None):
         dbcursor = self.database.cursor()
@@ -62,7 +62,7 @@ class KeystoneDbServices(KeystoneDbBase):
                 'type': service_data[2]
             }
 
-    def delete(self, service_id=None):
+    def delete(self, service_id):
         dbcursor = self.database.cursor()
         args = {
             'service_id': service_id,
@@ -70,7 +70,8 @@ class KeystoneDbServices(KeystoneDbBase):
         dbcursor.execute(SQL_REMOVE_SERVICE, args)
 
         if not dbcursor.rowcount:
-            raise KeystoneTokenError(
-                'Unable to remove service')
+            raise KeystoneServiceCatalogServiceError(
+                'Unable to remove service'
+            )
 
         self.database.commit()

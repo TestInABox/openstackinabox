@@ -66,6 +66,17 @@ class TestKeystoneV2AuthApiKey(unittest.TestCase):
             )
             self.assertEqual(res.status_code, 200)
 
+            result = res.json()
+            token = result['access']['token']
+            user = result['access']['user']
+            serviceCatalog = result['access']['serviceCatalog']
+
+            self.assertEqual(0, len(serviceCatalog))
+            self.assertEqual(self.tenantid, token['tenant']['id'])
+            self.assertEqual(self.username, token['tenant']['name'])
+            self.assertEqual(self.username, user['name'])
+
+
     def test_invalid_auth_request(self):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
