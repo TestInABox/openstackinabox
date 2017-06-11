@@ -52,7 +52,7 @@ class KeystoneDbRoles(KeystoneDbBase):
         self.__admin_role_id = self.add(self.IDENTITY_ADMIN_ROLE)
         self.__viewer_role_id = self.add(self.IDENTITY_VIEWER_ROLE)
 
-    def add(self, name=None):
+    def add(self, name):
         dbcursor = self.database.cursor()
         args = {
             'name': name
@@ -65,7 +65,7 @@ class KeystoneDbRoles(KeystoneDbBase):
 
         return self.get(name)['id']
 
-    def get(self, name=None):
+    def get(self, name):
         dbcursor = self.database.cursor()
         args = {
             'name': name
@@ -94,7 +94,13 @@ class KeystoneDbRoles(KeystoneDbBase):
                 role_id
             )
         )
-        dbcursor.execute(SQL_ADD_USER_ROLE, args)
+        try:
+            dbcursor.execute(SQL_ADD_USER_ROLE, args)
+        except Exception as ex:
+            raise KeystoneRoleError(
+                'Unable to create role: - {0}'.format(ex)
+            )
+
         if not dbcursor.rowcount:
             raise KeystoneRoleError(
                 'Unable to assign role to tenant_id/user_id'

@@ -124,17 +124,33 @@ SQL_ADD_END_POINT = '''
 
 class KeystoneModel(BaseModel):
 
+    CHILD_MODELS = {
+            'roles': KeystoneDbRoles,
+            'services': KeystoneDbServices,
+            'endpoints': KeystoneDbServiceEndpoints,
+            'tenants': KeystoneDbTenants,
+            'tokens': KeystoneDbTokens,
+            'users': KeystoneDbUsers
+    }
+
+    @staticmethod
+    def initialize_db_schema(db_instance):
+        dbcursor = db_instance.cursor()
+        for table_sql in schema:
+            dbcursor.execute(table_sql)
+        db_instance.commit()
+
+    @classmethod
+    def get_child_models(cls, instance, db_instance):
+        return {
+            model_name: model_type(instance, db_instance)
+            for model_name, model_type in six.iteritems(cls.CHILD_MODELS)
+        }
+
     def __init__(self):
         super(KeystoneModel, self).__init__('KeystoneModel')
         self.database = sqlite3.connect(':memory:')
-        self.child_models = {
-            'roles': KeystoneDbRoles(self, self.database),
-            'services': KeystoneDbServices(self, self.database),
-            'endpoints': KeystoneDbServiceEndpoints(self, self.database),
-            'tenants': KeystoneDbTenants(self, self.database),
-            'tokens': KeystoneDbTokens(self, self.database),
-            'users': KeystoneDbUsers(self, self.database)
-        }
+        self.child_models = self.get_child_models(self, self.database)
         self.init_database()
 
     @property
@@ -163,9 +179,7 @@ class KeystoneModel(BaseModel):
 
     def init_database(self):
         self.log_info('Initializing database')
-        dbcursor = self.database.cursor()
-        for table_sql in schema:
-            dbcursor.execute(table_sql)
+        self.initialize_db_schema(self.database)
 
         self.services.initialize()
         self.tokens.initialize()
