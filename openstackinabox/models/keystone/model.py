@@ -125,12 +125,12 @@ SQL_ADD_END_POINT = '''
 class KeystoneModel(BaseModel):
 
     CHILD_MODELS = {
-            'roles': KeystoneDbRoles,
-            'services': KeystoneDbServices,
-            'endpoints': KeystoneDbServiceEndpoints,
-            'tenants': KeystoneDbTenants,
-            'tokens': KeystoneDbTokens,
-            'users': KeystoneDbUsers
+        'roles': KeystoneDbRoles,
+        'services': KeystoneDbServices,
+        'endpoints': KeystoneDbServiceEndpoints,
+        'tenants': KeystoneDbTenants,
+        'tokens': KeystoneDbTokens,
+        'users': KeystoneDbUsers
     }
 
     @staticmethod

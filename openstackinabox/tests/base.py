@@ -4,11 +4,34 @@ import unittest
 from openstackinabox.models.keystone.model import KeystoneModel
 
 
+class DbFailure(object):
+
+    def __init__(self, rowcount=0, fetchone=None):
+        self._row_count = rowcount
+        self._fetch_one = fetchone
+
+    def cursor(self):
+        return self
+
+    def execute(self, *args, **kwargs):
+        pass
+
+    @property
+    def rowcount(self):
+        return self._row_count
+
+    def fetchone(self):
+        return self._fetch_one
+
+    def commit(self):
+        pass
+
+
 class TestBase(unittest.TestCase):
 
     @staticmethod
     def get_testing_database(initialize_schema=True):
-        db_instance =  sqlite3.connect(":memory:")
+        db_instance = sqlite3.connect(":memory:")
         if initialize_schema:
             from openstackinabox.models.keystone.model import KeystoneModel
             KeystoneModel.initialize_db_schema(db_instance)

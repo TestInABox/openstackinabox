@@ -1,11 +1,10 @@
-import mock
 import unittest
 import uuid
 
 import ddt
 import six
 
-from openstackinabox.tests.base import TestBase
+from openstackinabox.tests.base import TestBase, DbFailure
 
 from openstackinabox.models.keystone import exceptions
 from openstackinabox.models.keystone.db.roles import KeystoneDbRoles
@@ -44,18 +43,6 @@ class TestKeystoneDbRoles(TestBase):
         self.assertIsNotNone(instance.viewer_role_id)
 
     def test_add_failure(self):
-        class DbFailure(object):
-
-            def cursor(self):
-                return self
-
-            def execute(self, *args, **kwargs):
-                pass
-
-            @property
-            def rowcount(self):
-                return 0
-
         instance = self.model(
             self.master,
             DbFailure(),
@@ -64,18 +51,6 @@ class TestKeystoneDbRoles(TestBase):
             instance.add('br34k1ng4llth1ng$')
 
     def test_add_user_role_by_id_failure(self):
-        class DbFailure(object):
-
-            def cursor(self):
-                return self
-
-            def execute(self, *args, **kwargs):
-                pass
-
-            @property
-            def rowcount(self):
-                return 0
-
         instance = self.model(
             self.master,
             DbFailure(),
@@ -134,8 +109,8 @@ class TestKeystoneDbRoles(TestBase):
         }
 
         tenant_id = self.tenants.add(
-            tenant_name = tenant['name'],
-            description = tenant['description'],
+            tenant_name=tenant['name'],
+            description=tenant['description'],
             enabled=True
         )
 
@@ -190,8 +165,8 @@ class TestKeystoneDbRoles(TestBase):
         }
 
         tenant_id = self.tenants.add(
-            tenant_name = tenant['name'],
-            description = tenant['description'],
+            tenant_name=tenant['name'],
+            description=tenant['description'],
             enabled=True
         )
         user_id = self.users.add(
@@ -240,8 +215,8 @@ class TestKeystoneDbRoles(TestBase):
         }
 
         tenant_id = self.tenants.add(
-            tenant_name = tenant['name'],
-            description = tenant['description'],
+            tenant_name=tenant['name'],
+            description=tenant['description'],
             enabled=True
         )
         user_id = self.users.add(

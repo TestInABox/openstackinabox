@@ -9,7 +9,9 @@ import mock
 import requests
 import stackinabox.util.requests_mock.core
 
-from openstackinabox.tests.services.keystone.v2.auth.base import TestKeystoneV2AuthBase
+from openstackinabox.tests.services.keystone.v2.auth.base import (
+    TestKeystoneV2AuthBase
+)
 
 
 @ddt.ddt
