@@ -147,11 +147,12 @@ class KeystoneModel(BaseModel):
             for model_name, model_type in six.iteritems(cls.CHILD_MODELS)
         }
 
-    def __init__(self):
+    def __init__(self, initialize=True):
         super(KeystoneModel, self).__init__('KeystoneModel')
         self.database = sqlite3.connect(':memory:')
         self.child_models = self.get_child_models(self, self.database)
-        self.init_database()
+        if initialize:
+            self.init_database()
 
     @property
     def users(self):

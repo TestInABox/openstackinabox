@@ -38,9 +38,9 @@ class TestBase(unittest.TestCase):
 
         return db_instance
 
-    def setUp(self):
+    def setUp(self, initialize=True):
         super(TestBase, self).setUp()
-        self.master_model = KeystoneModel()
+        self.master_model = KeystoneModel(initialize=initialize)
 
     def tearDown(self):
         super(TestBase, self).tearDown()
