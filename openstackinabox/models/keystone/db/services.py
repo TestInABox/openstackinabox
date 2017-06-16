@@ -9,6 +9,11 @@ SQL_ADD_SERVICE = '''
     VALUES (:name, :type)
 '''
 
+SQL_GET_MAX_SERVICE_ID = '''
+    SELECT MAX(serviceid)
+    FROM keystone_services
+'''
+
 SQL_GET_SERVICES = '''
     SELECT serviceid, name, type
     FROM keystone_services
@@ -45,6 +50,24 @@ class KeystoneDbServices(KeystoneDbBase):
         dbcursor.execute(SQL_ADD_SERVICE, args)
         if not dbcursor.rowcount:
             raise KeystoneServiceCatalogServiceError('Unable to add service')
+        self.database.commit()
+
+        dbcursor.execute(SQL_GET_MAX_SERVICE_ID)
+        service_data = dbcursor.fetchone()
+        if service_data is None:
+            raise KeystoneServiceCatalogServiceError(
+                "Unable to add service"
+            )
+
+        service_id = service_data[0]
+
+        self.log_debug(
+            'Added service {0}'.format(
+                service_id
+            )
+        )
+
+        return service_id
 
     def get(self, service_id=None):
         dbcursor = self.database.cursor()

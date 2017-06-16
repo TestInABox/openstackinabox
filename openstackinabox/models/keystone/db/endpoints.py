@@ -47,13 +47,13 @@ SQL_GET_MAX_ENDPOINT_URL_ID = '''
 '''
 
 SQL_GET_ENDPOINT_URL = '''
-    SELECT (endpointid, urlid, name, url)
+    SELECT endpointid, urlid, name, url
     FROM keystone_service_endpoints_url
     WHERE endpointid = :endpoint_id
 '''
 
 SQL_GET_ENDPOINT_SPECIFIC_URL = '''
-    SELECT (endpointid, urlid, name, url)
+    SELECT endpointid, urlid, name, url
     FROM keystone_service_endpoints_url
     WHERE endpointid = :endpoint_id
       AND urlid = :url_id
@@ -82,13 +82,13 @@ class KeystoneDbServiceEndpoints(KeystoneDbBase):
             'service_id': service_id,
             'region': region,
             'version_info_url': version_info,
-            'version_list': version_list,
+            'version_list_url': version_list,
             'version_id': str(version_id)
         }
         dbcursor.execute(SQL_ADD_ENDPOINT, args)
         if not dbcursor.rowcount:
             raise KeystoneServiceCatalogEndpointError('Unable to add service')
-        dbcursor.commit()
+        self.database.commit()
 
         dbcursor.execute(SQL_GET_MAX_ENDPOINT_ID)
         endpoint_data = dbcursor.fetchone()
@@ -100,7 +100,7 @@ class KeystoneDbServiceEndpoints(KeystoneDbBase):
         endpoint_id = endpoint_data[0]
 
         self.log_debug(
-            'Added endpoint {1} for service {2}'.format(
+            'Added endpoint {0} for service {1}'.format(
                 service_id,
                 endpoint_id,
             )
@@ -123,10 +123,10 @@ class KeystoneDbServiceEndpoints(KeystoneDbBase):
             yield {
                 'service_id': endpoint_data[0],
                 'endpoint_id': endpoint_data[1],
-                'region': endpoint_data[1],
-                'version_info': endpoint_data[2],
-                'version_list': endpoint_data[3],
-                'version_id': endpoint_data[4],
+                'region': endpoint_data[2],
+                'version_info': endpoint_data[3],
+                'version_list': endpoint_data[4],
+                'version_id': endpoint_data[5],
             }
 
     def delete(self, service_id, endpoint_id):
@@ -156,7 +156,7 @@ class KeystoneDbServiceEndpoints(KeystoneDbBase):
             raise KeystoneEndpointUrlError(
                 'Unable to add service endpoint url'
             )
-        dbcursor.commit()
+        self.database.commit()
 
         dbcursor.execute(SQL_GET_MAX_ENDPOINT_URL_ID)
         url_data = dbcursor.fetchone()
@@ -168,9 +168,9 @@ class KeystoneDbServiceEndpoints(KeystoneDbBase):
         url_id = url_data[0]
 
         self.log_debug(
-            'Added endpoint {1} for service {2}'.format(
-                service_id,
+            'Added url {1} for endpoint {0}'.format(
                 endpoint_id,
+                url_id
             )
         )
 
@@ -183,7 +183,7 @@ class KeystoneDbServiceEndpoints(KeystoneDbBase):
         }
 
         query = SQL_GET_ENDPOINT_URL
-        if service_id is not None:
+        if url_id is not None:
             args['url_id'] = url_id
             query = SQL_GET_ENDPOINT_SPECIFIC_URL
 
