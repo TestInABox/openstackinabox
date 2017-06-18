@@ -259,6 +259,7 @@ class KeystoneModel(BaseModel):
         raise KeystoneInvalidTokenError('Not the service admin token')
 
     def get_auth_token_entry(self, token_data, user_data):
+        # build the 'auth' section of the service catalog
         return {
             'id': token_data['token'],
             'expires': token_data['expires'],
@@ -291,21 +292,16 @@ class KeystoneModel(BaseModel):
         }
 
     def get_auth_service_catalog(self, user_data):
-        def value_or_none(endpoint_info, key):
-            if key in endpoint_info:
-                if endpoint_info[key] is not None:
-                    return endpoint_info[key]
-            return None
-
+        # build the services section of the service catalog
         def get_endpoints_for_service(service_id):
             def insert_if_not_none(dest, dest_key, source, source_key):
-                if key in source:
-                    if source[key] is not None:
-                        dest[key['name']] = source[key]
+                for i in [dest, dest_key, source, source_key]:
+                    print("param: {0}".format(i))
+                dest[dest_key] = source[source_key]
 
             optional_keys = [
                 {'source': 'region', 'dest': 'region'},
-                {'source': 'version_info_url', 'dest': 'versionInfo'},
+                {'source': 'version_info', 'dest': 'versionInfo'},
                 {'source': 'version_list', 'dest': 'versionList'},
                 {'source': 'version_id', 'dest': 'versionId'},
             ]
@@ -324,10 +320,10 @@ class KeystoneModel(BaseModel):
                     )
 
                 for url_data in self.endpoints.get_url(
-                    endpoint_info['endpoint_id']
+                    endpoint_data['endpoint_id']
                 ):
                     endpoint_info[url_data['name']] = (
-                        endpoint_info[url_data['url']]
+                        url_data['url']
                     )
 
                 yield endpoint_info
@@ -443,9 +439,7 @@ class KeystoneModel(BaseModel):
             self.log_error('Username Validation Failed')
             raise KeystoneUserError('Invalid User Data - Username')
 
-        if not self.tokens.validate_token(token):
-            self.log_error('Token Validation Failed')
-            raise KeystoneUserError('Invalid User Data - Token')
+        token_data = self.tokens.validate_token(token)
 
         tenant_data = self.tenants.get_by_id(tenant_id=tenant_id)
         if not tenant_data['enabled']:
@@ -457,7 +451,8 @@ class KeystoneModel(BaseModel):
             tenant_id=tenant_id
         ):
             user_counter = user_counter + 1
-            user = user_data
+            if user_data['user_id'] == token_data['userid']:
+                user = user_data
 
         if user is None:
             raise KeystoneUnknownUserError('Unable to locate user')
@@ -465,23 +460,10 @@ class KeystoneModel(BaseModel):
         if user['enabled'] is False:
             raise KeystoneDisabledUserError('User is disabled')
 
-        token_data = self.tokens.get_by_tenant_id(tenant_id)
-
-        real_token_data = None
-        for an_entry in token_data:
-            if an_entry['token'] == token:
-                real_token_data = an_entry
-                break
-
-        if real_token_data is None:
-            raise KeystoneInvalidTokenError(
-                'Invalid User Data - Token Mismatch'
-            )
-
         # side-effects if token revoked or expired
-        self.tokens.check_expiration(real_token_data)
+        self.tokens.check_expiration(token_data)
 
-        return self.get_service_catalog(real_token_data, user)
+        return self.get_service_catalog(token_data, user)
 
     def tenant_name_token_auth(self, auth_data):
         try:
@@ -493,10 +475,6 @@ class KeystoneModel(BaseModel):
         if not self.tenants.validate_tenant_name(tenant_name):
             self.log_error('Tenant Name Validation Failed')
             raise KeystoneUserError('Invalid User Data - Tenant Name')
-
-        if not self.tokens.validate_token(token):
-            self.log_error('Token Validation Failed')
-            raise KeystoneUserError('Invalid User Data - Token')
 
         tenant_data = self.tenants.get_by_name(tenant_name=tenant_name)
 
