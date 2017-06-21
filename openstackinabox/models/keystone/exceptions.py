@@ -54,3 +54,19 @@ class KeystoneExpiredTokenError(KeystoneInvalidTokenError):
 
 class KeystoneRoleError(KeystoneError):
     pass
+
+
+class KeystoneServiceCatalogError(KeystoneError):
+    pass
+
+
+class KeystoneServiceCatalogServiceError(KeystoneServiceCatalogError):
+    pass
+
+
+class KeystoneServiceCatalogEndpointError(KeystoneServiceCatalogError):
+    pass
+
+
+class KeystoneEndpointUrlError(KeystoneServiceCatalogEndpointError):
+    pass

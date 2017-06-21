@@ -9,6 +9,11 @@ SQL_ADD_SERVICE = '''
     VALUES (:name, :type)
 '''
 
+SQL_GET_MAX_SERVICE_ID = '''
+    SELECT MAX(serviceid)
+    FROM keystone_services
+'''
+
 SQL_GET_SERVICES = '''
     SELECT serviceid, name, type
     FROM keystone_services
@@ -44,7 +49,25 @@ class KeystoneDbServices(KeystoneDbBase):
         }
         dbcursor.execute(SQL_ADD_SERVICE, args)
         if not dbcursor.rowcount:
-            raise KeystoneRoleError('Unable to add service')
+            raise KeystoneServiceCatalogServiceError('Unable to add service')
+        self.database.commit()
+
+        dbcursor.execute(SQL_GET_MAX_SERVICE_ID)
+        service_data = dbcursor.fetchone()
+        if service_data is None:
+            raise KeystoneServiceCatalogServiceError(
+                "Unable to add service"
+            )
+
+        service_id = service_data[0]
+
+        self.log_debug(
+            'Added service {0}'.format(
+                service_id
+            )
+        )
+
+        return service_id
 
     def get(self, service_id=None):
         dbcursor = self.database.cursor()
@@ -62,7 +85,7 @@ class KeystoneDbServices(KeystoneDbBase):
                 'type': service_data[2]
             }
 
-    def delete(self, service_id=None):
+    def delete(self, service_id):
         dbcursor = self.database.cursor()
         args = {
             'service_id': service_id,
@@ -70,7 +93,8 @@ class KeystoneDbServices(KeystoneDbBase):
         dbcursor.execute(SQL_REMOVE_SERVICE, args)
 
         if not dbcursor.rowcount:
-            raise KeystoneTokenError(
-                'Unable to remove service')
+            raise KeystoneServiceCatalogServiceError(
+                'Unable to remove service'
+            )
 
         self.database.commit()

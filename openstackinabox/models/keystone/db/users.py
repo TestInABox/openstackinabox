@@ -71,11 +71,11 @@ class KeystoneDbUsers(KeystoneDbBase):
     def initialize(self):
         # Create an admin user and add the admin token to that user
         self.__admin_user_id = self.add(
-            self.master.tenants.admin_tenant_id,
-            'system',
-            'system@stackinabox',
-            'stackinabox',
-            '537461636b496e41426f78'
+            tenant_id=self.master.tenants.admin_tenant_id,
+            username='system',
+            email='system@stackinabox',
+            password='stackinabox',
+            apikey='537461636b496e41426f78'
         )
         self.master.roles.add_user_role_by_id(
             tenant_id=self.master.tenants.admin_tenant_id,
@@ -210,7 +210,7 @@ class KeystoneDbUsers(KeystoneDbBase):
 
         self.database.commit()
 
-    def get_for_tenant_id(self, tenant_id=None):
+    def get_for_tenant_id(self, tenant_id):
         dbcursor = self.database.cursor()
         args = {
             'tenant_id': tenant_id
