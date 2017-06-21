@@ -6,6 +6,21 @@ from openstackinabox.models.keystone.exceptions import *
 from openstackinabox.models.keystone.db.base import KeystoneDbBase
 
 
+class UtcTimezone(datetime.tzinfo):
+
+    def _offset(self):
+        return datetime.timedelta(0)
+
+    def utcoffset(self, dt):
+        return self._offset()
+
+    def tzname(self, dt):
+        return 'UTC'
+
+    def dst(self, dt):
+        return self._offset()
+
+
 SQL_INSERT_TOKEN = '''
     INSERT INTO keystone_tokens
     (tenantid, userid, token, ttl, revoked)
@@ -44,6 +59,7 @@ SQL_REVOKE_TOKEN = '''
     SET revoked = 1
     WHERE tenantid = :tenant_id
       AND userid = :user_id
+      AND token = :token
 '''
 
 SQL_RESET_REVOKED_TOKEN = '''
@@ -51,9 +67,17 @@ SQL_RESET_REVOKED_TOKEN = '''
     SET revoked = 0
     WHERE tenantid = :tenant_id
       AND userid = :user_id
+      AND token = :token
 '''
 
 SQL_DELETE_TOKEN = '''
+    DELETE FROM keystone_tokens
+    WHERE tenantid = :tenant_id
+      AND userid = :user_id
+      AND token = :token
+'''
+
+SQL_DELETE_ALL_TOKENS = '''
     DELETE FROM keystone_tokens
     WHERE tenantid = :tenant_id
       AND userid = :user_id
@@ -68,6 +92,9 @@ SQL_VALIDATE_TOKEN = '''
 
 class KeystoneDbTokens(KeystoneDbBase):
 
+    '''2015-02-03 02:31:17'''
+    EXPIRE_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+
     def __init__(self, master, db):
         super(KeystoneDbTokens, self).__init__("KeystoneTokens", master, db)
         self.__admin_token = None
@@ -78,6 +105,13 @@ class KeystoneDbTokens(KeystoneDbBase):
     @property
     def admin_token(self):
         return self.__admin_token
+
+    @staticmethod
+    def convert_to_utc(dt):
+        if dt.utcoffset() is not None:
+            return dt.replace(tzinfo=UtcTimezone())
+        else:
+            return dt
 
     def add(self, tenant_id=None, user_id=None,
             expire_time=None, token=None):
@@ -95,16 +129,8 @@ class KeystoneDbTokens(KeystoneDbBase):
                 raise TypeError(
                     'expire_time must be a datetime.datetime object')
 
-            '''2015-02-03 02:31:17'''
-            utc_expire_time = expire_time.utctimetuple()
-            args['ttl'] = '{0}-{1}-{2} {3}:{4}:5'.format(
-                utc_expire_time[0],
-                utc_expire_time[1],
-                utc_expire_time[2],
-                utc_expire_time[3],
-                utc_expire_time[4],
-                utc_expire_time[5]
-            )
+            utc_expire_time = self.convert_to_utc(expire_time)
+            args['ttl'] = utc_expire_time.strftime(self.EXPIRE_TIME_FORMAT)
             dbcursor.execute(SQL_INSERT_TOKEN_AND_EXPIRATION, args)
         else:
             dbcursor.execute(SQL_INSERT_TOKEN, args)
@@ -115,11 +141,12 @@ class KeystoneDbTokens(KeystoneDbBase):
         self.database.commit()
         return token
 
-    def revoke(self, tenant_id=None, user_id=None, reset=False):
+    def revoke(self, tenant_id=None, user_id=None, token=None, reset=False):
         dbcursor = self.database.cursor()
         args = {
             'tenant_id': tenant_id,
-            'user_id': user_id
+            'user_id': user_id,
+            'token': token
         }
         if reset:
             dbcursor.execute(SQL_RESET_REVOKED_TOKEN, args)
@@ -132,13 +159,17 @@ class KeystoneDbTokens(KeystoneDbBase):
 
         self.database.commit()
 
-    def delete(self, tenant_id=None, user_id=None):
+    def delete(self, tenant_id=None, user_id=None, token=None):
         dbcursor = self.database.cursor()
         args = {
             'tenant_id': tenant_id,
-            'user_id': user_id
+            'user_id': user_id,
         }
-        dbcursor.execute(SQL_DELETE_TOKEN, args)
+        query = SQL_DELETE_ALL_TOKENS
+        if token is not None:
+            query = SQL_DELETE_TOKEN
+            args['token'] = token
+        dbcursor.execute(query, args)
 
         if not dbcursor.rowcount:
             raise KeystoneTokenError(
@@ -165,21 +196,23 @@ class KeystoneDbTokens(KeystoneDbBase):
             'revoked': self.bool_from_database(token_data[4])
         }
 
-    def get_by_tenant_id(self, tenant_id=None):
+    def get_by_tenant_id(self, tenant_id):
         dbcursor = self.database.cursor()
         args = {
             'tenant_id': tenant_id
         }
-        results = []
-        for token_data in dbcursor.execute(SQL_GET_TOKEN_BY_TENANT_ID, args):
-            results.append({
+        return [
+            {
                 'tenant_id': token_data[0],
                 'user_id': token_data[1],
                 'token': token_data[2],
                 'expires': token_data[3],
                 'revoked': self.bool_from_database(token_data[4])
-            })
-        return results
+            }
+            for token_data in dbcursor.execute(
+                SQL_GET_TOKEN_BY_TENANT_ID, args
+            )
+        ]
 
     def get_by_username(self, username=None):
         dbcursor = self.database.cursor()
@@ -199,13 +232,14 @@ class KeystoneDbTokens(KeystoneDbBase):
             'revoked': self.bool_from_database(token_data[4])
         }
 
-    def check_expiration(self, token):
+    @classmethod
+    def check_expiration(cls, token):
         if token['revoked']:
             raise KeystoneRevokedTokenError('Token was revoked')
 
         # 2015-02-03 02:30:58
         expire_time = datetime.datetime.strptime(token['expires'],
-                                                 '%Y-%m-%d %H:%M:%S')
+                                                 cls.EXPIRE_TIME_FORMAT)
         now = datetime.datetime.utcnow()
         if expire_time < now:
             raise KeystoneExpiredTokenError(

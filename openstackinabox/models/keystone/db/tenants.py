@@ -81,7 +81,8 @@ class KeystoneDbTenants(KeystoneDbBase):
         tenant_data = dbcursor.fetchone()
         if tenant_data is None:
             raise KeystoneTenantError(
-                'Unable to retrieve tenant_id for newly created tenant')
+                'Unable to retrieve tenant_id for newly created tenant'
+            )
 
         tenant_id = tenant_data[0]
 

@@ -13,6 +13,9 @@ import six
 from openstackinabox.models.base_model import *
 from openstackinabox.models.keystone.exceptions import *
 
+from openstackinabox.models.keystone.db.endpoints import (
+    KeystoneDbServiceEndpoints
+)
 from openstackinabox.models.keystone.db.roles import KeystoneDbRoles
 from openstackinabox.models.keystone.db.services import KeystoneDbServices
 from openstackinabox.models.keystone.db.tenants import KeystoneDbTenants
@@ -121,17 +124,35 @@ SQL_ADD_END_POINT = '''
 
 class KeystoneModel(BaseModel):
 
-    def __init__(self):
+    CHILD_MODELS = {
+        'roles': KeystoneDbRoles,
+        'services': KeystoneDbServices,
+        'endpoints': KeystoneDbServiceEndpoints,
+        'tenants': KeystoneDbTenants,
+        'tokens': KeystoneDbTokens,
+        'users': KeystoneDbUsers
+    }
+
+    @staticmethod
+    def initialize_db_schema(db_instance):
+        dbcursor = db_instance.cursor()
+        for table_sql in schema:
+            dbcursor.execute(table_sql)
+        db_instance.commit()
+
+    @classmethod
+    def get_child_models(cls, instance, db_instance):
+        return {
+            model_name: model_type(instance, db_instance)
+            for model_name, model_type in six.iteritems(cls.CHILD_MODELS)
+        }
+
+    def __init__(self, initialize=True):
         super(KeystoneModel, self).__init__('KeystoneModel')
         self.database = sqlite3.connect(':memory:')
-        self.child_models = {
-            'roles': KeystoneDbRoles(self, self.database),
-            'services': KeystoneDbServices(self, self.database),
-            'tenants': KeystoneDbTenants(self, self.database),
-            'tokens': KeystoneDbTokens(self, self.database),
-            'users': KeystoneDbUsers(self, self.database)
-        }
-        self.init_database()
+        self.child_models = self.get_child_models(self, self.database)
+        if initialize:
+            self.init_database()
 
     @property
     def users(self):
@@ -153,11 +174,13 @@ class KeystoneModel(BaseModel):
     def services(self):
         return self.child_models['services']
 
+    @property
+    def endpoints(self):
+        return self.child_models['endpoints']
+
     def init_database(self):
         self.log_info('Initializing database')
-        dbcursor = self.database.cursor()
-        for table_sql in schema:
-            dbcursor.execute(table_sql)
+        self.initialize_db_schema(self.database)
 
         self.services.initialize()
         self.tokens.initialize()
@@ -236,6 +259,7 @@ class KeystoneModel(BaseModel):
         raise KeystoneInvalidTokenError('Not the service admin token')
 
     def get_auth_token_entry(self, token_data, user_data):
+        # build the 'auth' section of the service catalog
         return {
             'id': token_data['token'],
             'expires': token_data['expires'],
@@ -268,27 +292,61 @@ class KeystoneModel(BaseModel):
         }
 
     def get_auth_service_catalog(self, user_data):
-        return []
-        """
-        TODO(BenjamenMeyer): actually build the catalog
+        # build the services section of the service catalog
+        def get_endpoints_for_service(service_id):
+            def insert_if_not_none(dest, dest_key, source, source_key):
+                for i in [dest, dest_key, source, source_key]:
+                    print("param: {0}".format(i))
+                dest[dest_key] = source[source_key]
+
+            optional_keys = [
+                {'source': 'region', 'dest': 'region'},
+                {'source': 'version_info', 'dest': 'versionInfo'},
+                {'source': 'version_list', 'dest': 'versionList'},
+                {'source': 'version_id', 'dest': 'versionId'},
+            ]
+
+            for endpoint_data in self.endpoints.get(service_id):
+                endpoint_info = {
+                    'tenantId': None,
+                }
+
+                for key_copy in optional_keys:
+                    insert_if_not_none(
+                        endpoint_info,
+                        key_copy['dest'],
+                        endpoint_data,
+                        key_copy['source']
+                    )
+
+                for url_data in self.endpoints.get_url(
+                    endpoint_data['endpoint_id']
+                ):
+                    endpoint_info[url_data['name']] = (
+                        url_data['url']
+                    )
+
+                yield endpoint_info
+
         return [
             {
-                'name': None,
+                'name': service_data['name'],
                 'endpoints': [
-                    {
-                        'region': None,  # optional (but used by most)
-                        'tenantId': None,
-                        'publicURL': None,
-                        'internalURL': None,  # optional
-                        'versionInfo': None,  # optional
-                        'versionList': None,  # optioanl
-                        'versionId': None  # optional
-                    }
+                    endpoint_data
+                    for endpoint_data
+                    in get_endpoints_for_service(service_data['id'])
                 ],
-                'type': None
+                'type': service_data['type']
             }
+            for service_data in self.services.get()
         ]
-        """
+
+    def get_service_catalog(self, token, user):
+        return {
+            'serviceCatalog': self.get_auth_service_catalog(user),
+            'token': self.get_auth_token_entry(token, user),
+            'user': self.get_auth_user_entry(user)
+        }
 
     def password_authenticate(self, password_data):
         if not self.users.validate_username(password_data['username']):
@@ -328,11 +386,7 @@ class KeystoneModel(BaseModel):
             user['user_id']
         )
 
-        return {
-            'serviceCatalog': self.get_auth_service_catalog(user),
-            'token': self.get_auth_token_entry(token, user),
-            'user': self.get_auth_user_entry(user)
-        }
+        return self.get_service_catalog(token, user)
 
     def apikey_authenticate(self, apikey_data):
         if not self.users.validate_username(apikey_data['username']):
@@ -372,11 +426,7 @@ class KeystoneModel(BaseModel):
             user['user_id']
         )
 
-        return {
-            'serviceCatalog': self.get_auth_service_catalog(user),
-            'token': self.get_auth_token_entry(token, user),
-            'user': self.get_auth_user_entry(user)
-        }
+        return self.get_service_catalog(token, user)
 
     def tenant_id_token_auth(self, auth_data):
         try:
@@ -389,9 +439,7 @@ class KeystoneModel(BaseModel):
             self.log_error('Username Validation Failed')
             raise KeystoneUserError('Invalid User Data - Username')
 
-        if not self.tokens.validate_token(token):
-            self.log_error('Token Validation Failed')
-            raise KeystoneUserError('Invalid User Data - Token')
+        token_data = self.tokens.validate_token(token)
 
         tenant_data = self.tenants.get_by_id(tenant_id=tenant_id)
         if not tenant_data['enabled']:
@@ -403,7 +451,8 @@ class KeystoneModel(BaseModel):
             tenant_id=tenant_id
         ):
             user_counter = user_counter + 1
-            user = user_data
+            if user_data['user_id'] == token_data['userid']:
+                user = user_data
 
         if user is None:
             raise KeystoneUnknownUserError('Unable to locate user')
@@ -411,27 +460,10 @@ class KeystoneModel(BaseModel):
         if user['enabled'] is False:
             raise KeystoneDisabledUserError('User is disabled')
 
-        token_data = self.tokens.get_by_tenant_id(tenant_id)
-
-        real_token_data = None
-        for an_entry in token_data:
-            if an_entry['token'] == token:
-                real_token_data = an_entry
-                break
-
-        if real_token_data is None:
-            raise KeystoneInvalidTokenError(
-                'Invalid User Data - Token Mismatch'
-            )
-
         # side-effects if token revoked or expired
-        self.tokens.check_expiration(real_token_data)
+        self.tokens.check_expiration(token_data)
 
-        return {
-            'serviceCatalog': self.get_auth_service_catalog(user),
-            'token': self.get_auth_token_entry(real_token_data, user),
-            'user': self.get_auth_user_entry(user)
-        }
+        return self.get_service_catalog(token_data, user)
 
     def tenant_name_token_auth(self, auth_data):
         try:
@@ -443,10 +475,6 @@ class KeystoneModel(BaseModel):
         if not self.tenants.validate_tenant_name(tenant_name):
             self.log_error('Tenant Name Validation Failed')
             raise KeystoneUserError('Invalid User Data - Tenant Name')
-
-        if not self.tokens.validate_token(token):
-            self.log_error('Token Validation Failed')
-            raise KeystoneUserError('Invalid User Data - Token')
 
         tenant_data = self.tenants.get_by_name(tenant_name=tenant_name)
 

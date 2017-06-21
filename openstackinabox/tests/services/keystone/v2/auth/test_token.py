@@ -10,64 +10,20 @@ import ddt
 import mock
 import requests
 import stackinabox.util.requests_mock.core
-from stackinabox.stack import StackInABox
 
-from openstackinabox.models.keystone.model import KeystoneModel
-from openstackinabox.services.keystone import KeystoneV2Service
+from openstackinabox.tests.services.keystone.v2.auth.base import (
+    TestKeystoneV2AuthBase
+)
 
 
 @ddt.ddt
-class TestKeystoneV2AuthToken(unittest.TestCase):
-
-    @staticmethod
-    def make_tenant_name():
-        return 'tenant_{0}'.format(str(uuid.uuid4()))
+class TestKeystoneV2AuthToken(TestKeystoneV2AuthBase):
 
     def setUp(self):
         super(TestKeystoneV2AuthToken, self).setUp()
 
-        self.keystone = KeystoneV2Service()
-        self.tenantname = self.make_tenant_name()
-        self.username = 'user_{0}'.format(str(uuid.uuid4()))
-        self.password = 'pAss{0}'.format(
-            str(uuid.uuid4()).replace('-', '')
-        )
-        self.apikey = str(uuid.uuid4())
-        self.email = '{0}@stackinabox.mock'.format(self.username)
-
-        self.keystone.model.tenants.add(
-            tenant_name=self.tenantname,
-            description="test tenant"
-        )
-        tenant_data = self.keystone.model.tenants.get_by_name(
-            tenant_name=self.tenantname
-        )
-        self.tenantid = tenant_data['id']
-
-        self.keystone.model.users.add(
-            tenant_id=self.tenantid,
-            username=self.username,
-            password=self.password,
-            apikey=self.apikey,
-            email=self.email
-        )
-        user_data = self.keystone.model.users.get_by_name(
-            tenant_id=self.tenantid,
-            username=self.username
-        )
-        self.userid = user_data['user_id']
-        self.token = self.keystone.model.tokens.make_token()
-        self.keystone.model.tokens.add(
-            tenant_id=self.tenantid,
-            user_id=self.userid,
-            token=self.token
-        )
-
-        StackInABox.register_service(self.keystone)
-
     def tearDown(self):
         super(TestKeystoneV2AuthToken, self).tearDown()
-        StackInABox.reset_services()
 
     @ddt.data(
         ('tenantId', 'tenantid'),
@@ -93,6 +49,11 @@ class TestKeystoneV2AuthToken(unittest.TestCase):
                 data=json.dumps(auth_data)
             )
             self.assertEqual(res.status_code, 200)
+
+            result = res.json()
+            self.assertUserData(result)
+            self.assertTokenData(result, tenant_name=self.username)
+            self.assertServiceCatalog(result)
 
     @ddt.data(
         ('tenantId', 'tenantid'),
