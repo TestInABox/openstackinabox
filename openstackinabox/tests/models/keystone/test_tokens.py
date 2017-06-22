@@ -1,10 +1,8 @@
 import datetime
 import mock
-import unittest
 import uuid
 
 import ddt
-import six
 
 from openstackinabox.tests.base import TestBase, DbFailure
 
@@ -227,7 +225,7 @@ class TestKeystoneDbTokens(TestBase):
         )
         self.assertIsNotNone(generated_token)
 
-        user_token = instance.get_by_user_id(
+        instance.get_by_user_id(
             user_id=user_id
         )
 

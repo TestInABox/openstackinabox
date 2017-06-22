@@ -1,7 +1,7 @@
 import datetime
 import uuid
 
-from openstackinabox.models.keystone.exceptions import *
+from openstackinabox.models.keystone import exceptions
 
 from openstackinabox.models.keystone.db.base import KeystoneDbBase
 
@@ -136,7 +136,7 @@ class KeystoneDbTokens(KeystoneDbBase):
             dbcursor.execute(SQL_INSERT_TOKEN, args)
 
         if not dbcursor.rowcount:
-            raise KeystoneTokenError('Unable to add token')
+            raise exceptions.KeystoneTokenError('Unable to add token')
 
         self.database.commit()
         return token
@@ -154,7 +154,7 @@ class KeystoneDbTokens(KeystoneDbBase):
             dbcursor.execute(SQL_REVOKE_TOKEN, args)
 
         if not dbcursor.rowcount:
-            raise KeystoneTokenError(
+            raise exceptions.KeystoneTokenError(
                 'Unknown tenant_id or  user_id; or no associated token')
 
         self.database.commit()
@@ -172,7 +172,7 @@ class KeystoneDbTokens(KeystoneDbBase):
         dbcursor.execute(query, args)
 
         if not dbcursor.rowcount:
-            raise KeystoneTokenError(
+            raise exceptions.KeystoneTokenError(
                 'Unknown tenant_id or  user_id; or no associated token')
 
         self.database.commit()
@@ -185,8 +185,9 @@ class KeystoneDbTokens(KeystoneDbBase):
         dbcursor.execute(SQL_GET_TOKEN_BY_USER_ID, args)
         token_data = dbcursor.fetchone()
         if token_data is None:
-            raise KeystoneUnknownUserError('Unknown user_id - {0}'
-                                           .format(user_id))
+            raise exceptions.KeystoneUnknownUserError(
+                'Unknown user_id - {0}'.format(user_id)
+            )
 
         return {
             'tenant_id': token_data[0],
@@ -222,7 +223,7 @@ class KeystoneDbTokens(KeystoneDbBase):
         dbcursor.execute(SQL_GET_TOKEN_BY_USER_NAME, args)
         token_data = dbcursor.fetchone()
         if token_data is None:
-            raise KeystoneUnknownUserError('Unknown username')
+            raise exceptions.KeystoneUnknownUserError('Unknown username')
 
         return {
             'tenant_id': token_data[0],
@@ -235,14 +236,14 @@ class KeystoneDbTokens(KeystoneDbBase):
     @classmethod
     def check_expiration(cls, token):
         if token['revoked']:
-            raise KeystoneRevokedTokenError('Token was revoked')
+            raise exceptions.KeystoneRevokedTokenError('Token was revoked')
 
         # 2015-02-03 02:30:58
         expire_time = datetime.datetime.strptime(token['expires'],
                                                  cls.EXPIRE_TIME_FORMAT)
         now = datetime.datetime.utcnow()
         if expire_time < now:
-            raise KeystoneExpiredTokenError(
+            raise exceptions.KeystoneExpiredTokenError(
                 'Token expired ({0} >= {1})'.format(
                     expire_time, now
                 )
@@ -256,7 +257,7 @@ class KeystoneDbTokens(KeystoneDbBase):
         dbcursor.execute(SQL_VALIDATE_TOKEN, args)
         token_data = dbcursor.fetchone()
         if token_data is None:
-            raise KeystoneInvalidTokenError('Invalid token')
+            raise exceptions.KeystoneInvalidTokenError('Invalid token')
 
         result = {
             'tenantid': token_data[0],

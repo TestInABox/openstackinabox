@@ -1,17 +1,10 @@
 """
 OpenStack Keystone v2 Service
 """
-import json
 import re
-import uuid
-
-import six
-from six.moves.urllib import parse
 
 from openstackinabox.models.keystone import KeystoneModel
-from openstackinabox.services.base_service import BaseService
 from openstackinabox.services.keystone.v2.base import KeystoneV2ServiceBase
-from openstackinabox.services.keystone.v2.exceptions import *
 from openstackinabox.services.keystone.v2.tenants import (
     KeystoneV2ServiceTenants
 )

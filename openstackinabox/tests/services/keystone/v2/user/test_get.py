@@ -1,15 +1,12 @@
 """
 Stack-In-A-Box: Basic Test
 """
-import json
 import unittest
 
-import mock
 import requests
 import stackinabox.util.requests_mock.core
 from stackinabox.stack import StackInABox
 
-from openstackinabox.models.keystone.model import KeystoneModel
 from openstackinabox.services.keystone import KeystoneV2Service
 
 
@@ -46,7 +43,7 @@ class TestKeystoneV2UserGet(unittest.TestCase):
                 tenant_id=neo_tenant_id,
                 user_id=tom
             )
-            user_data = self.keystone.model.tokens.get_by_user_id(tom)
+            self.keystone.model.tokens.get_by_user_id(tom)
 
             url = 'http://localhost/keystone/v2.0/users/{0}'.format(tom)
             res = requests.get(url)
@@ -72,7 +69,7 @@ class TestKeystoneV2UserGet(unittest.TestCase):
                 tenant_id=neo_tenant_id,
                 user_id=tom
             )
-            user_data = self.keystone.model.tokens.get_by_user_id(tom)
+            self.keystone.model.tokens.get_by_user_id(tom)
 
             url = 'http://localhost/keystone/v2.0/users/{0}'.format(tom)
             self.headers['x-auth-token'] = 'new_token'

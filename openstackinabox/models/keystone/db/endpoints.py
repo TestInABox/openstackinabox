@@ -1,4 +1,4 @@
-from openstackinabox.models.keystone.exceptions import *
+from openstackinabox.models.keystone import exceptions
 
 from openstackinabox.models.keystone.db.base import KeystoneDbBase
 
@@ -87,13 +87,15 @@ class KeystoneDbServiceEndpoints(KeystoneDbBase):
         }
         dbcursor.execute(SQL_ADD_ENDPOINT, args)
         if not dbcursor.rowcount:
-            raise KeystoneServiceCatalogEndpointError('Unable to add service')
+            raise exceptions.KeystoneServiceCatalogEndpointError(
+                'Unable to add service'
+            )
         self.database.commit()
 
         dbcursor.execute(SQL_GET_MAX_ENDPOINT_ID)
         endpoint_data = dbcursor.fetchone()
         if endpoint_data is None:
-            raise KeystoneServiceCatalogEndpointError(
+            raise exceptions.KeystoneServiceCatalogEndpointError(
                 "Unable to add endpoint"
             )
 
@@ -138,7 +140,7 @@ class KeystoneDbServiceEndpoints(KeystoneDbBase):
         dbcursor.execute(SQL_DELETE_ENDPOINT, args)
 
         if not dbcursor.rowcount:
-            raise KeystoneServiceCatalogEndpointError(
+            raise exceptions.KeystoneServiceCatalogEndpointError(
                 'Unable to remove endpoint for service'
             )
 
@@ -153,7 +155,7 @@ class KeystoneDbServiceEndpoints(KeystoneDbBase):
         }
         dbcursor.execute(SQL_ADD_ENDPOINT_URL, args)
         if not dbcursor.rowcount:
-            raise KeystoneEndpointUrlError(
+            raise exceptions.KeystoneEndpointUrlError(
                 'Unable to add service endpoint url'
             )
         self.database.commit()
@@ -161,7 +163,7 @@ class KeystoneDbServiceEndpoints(KeystoneDbBase):
         dbcursor.execute(SQL_GET_MAX_ENDPOINT_URL_ID)
         url_data = dbcursor.fetchone()
         if url_data is None:
-            raise KeystoneEndpointUrlError(
+            raise exceptions.KeystoneEndpointUrlError(
                 "Unable to add endpoint url"
             )
 
@@ -204,7 +206,7 @@ class KeystoneDbServiceEndpoints(KeystoneDbBase):
         dbcursor.execute(SQL_DELETE_ENDPOINT_URL, args)
 
         if not dbcursor.rowcount:
-            raise KeystoneEndpointUrlError(
+            raise exceptions.KeystoneEndpointUrlError(
                 'Unable to remove endpoint url')
 
         self.database.commit()

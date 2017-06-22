@@ -1,15 +1,12 @@
 """
 Stack-In-A-Box: Basic Test
 """
-import json
 import unittest
 
-import mock
 import requests
 import stackinabox.util.requests_mock.core
 from stackinabox.stack import StackInABox
 
-from openstackinabox.models.keystone.model import KeystoneModel
 from openstackinabox.services.keystone import KeystoneV2Service
 
 
@@ -83,7 +80,6 @@ class TestKeystoneV2UserDelete(unittest.TestCase):
                 tenant_id=neo_tenant_id,
                 user_id=tom
             )
-            json_data = json.dumps(self.user_info)
             user_data = self.keystone.model.tokens.get_by_user_id(tom)
             self.headers['x-auth-token'] = user_data['token']
             res = requests.delete(
@@ -118,7 +114,6 @@ class TestKeystoneV2UserDelete(unittest.TestCase):
                 tenant_id=neo_tenant_id,
                 user_id=tom
             )
-            json_data = json.dumps(self.user_info)
             user_data = self.keystone.model.tokens.get_by_user_id(tom)
             self.headers['x-auth-token'] = user_data['token']
             res = requests.delete(

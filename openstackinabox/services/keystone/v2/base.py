@@ -2,7 +2,7 @@ import re
 
 from openstackinabox.models.keystone import KeystoneModel
 from openstackinabox.services.base_service import BaseService
-from openstackinabox.services.keystone.v2.exceptions import *
+from openstackinabox.services.keystone.v2 import exceptions
 
 
 class KeystoneV2ServiceBase(BaseService):
@@ -50,7 +50,7 @@ class KeystoneV2ServiceBase(BaseService):
     def helper_validate_token(self, request_headers,
                               enforce_admin, service_admin):
         if 'x-auth-token' not in request_headers:
-            raise KeystoneV2AuthForbiddenError('no auth token')
+            raise exceptions.KeystoneV2AuthForbiddenError('no auth token')
 
         try:
             auth_token = request_headers['x-auth-token']
@@ -76,7 +76,7 @@ class KeystoneV2ServiceBase(BaseService):
             )
         except Exception as ex:
             self.log_exception('invalid or expired auth token')
-            raise KeystoneV2AuthUnauthorizedError(
+            raise exceptions.KeystoneV2AuthUnauthorizedError(
                 'invalid or expired auth token'
             )
 
@@ -92,11 +92,11 @@ class KeystoneV2ServiceBase(BaseService):
                 service_admin
             )
 
-        except KeystoneV2AuthForbiddenError:
+        except exceptions.KeystoneV2AuthForbiddenError:
             self.log_exception('no token')
             return (403, headers, 'Forbidden')
 
-        except KeystoneV2AuthUnauthorizedError:
+        except exceptions.KeystoneV2AuthUnauthorizedError:
             self.log_exception('invalid or expired token')
             return (401, headers, 'Not Authorized')
 

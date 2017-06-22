@@ -1,9 +1,8 @@
 import json
-import re
 
 from openstackinabox.services.base_service import BaseService
 from openstackinabox.services.keystone.v2.base import KeystoneV2ServiceBase
-from openstackinabox.services.keystone.v2.exceptions import *
+from openstackinabox.services.keystone.v2 import exceptions
 
 
 class KeystoneV2ServiceTokens(KeystoneV2ServiceBase):
@@ -82,7 +81,6 @@ class KeystoneV2ServiceTokens(KeystoneV2ServiceBase):
         500 -> Service Fault
         '''
         self.log_request(uri, request)
-        req_headers = request.headers
         req_body = request.body
 
         body = json.loads(req_body)
@@ -116,25 +114,25 @@ class KeystoneV2ServiceTokens(KeystoneV2ServiceBase):
             }
             return (200, headers, json.dumps(response_body))
 
-        except KeystoneUserInvalidPasswordError:
+        except exceptions.KeystoneUserInvalidPasswordError:
             return (401, headers, "Not Authorized")
 
-        except KeystoneUserInvalidApiKeyError:
+        except exceptions.KeystoneUserInvalidApiKeyError:
             return (401, headers, "Not Authorized")
 
-        except KeystoneTokenError:
+        except exceptions.KeystoneTokenError:
             return (401, headers, "Not Authorized")
 
-        except KeystoneTenantError:
+        except exceptions.KeystoneTenantError:
             return (403, headers, "Access Forbidden")
 
-        except KeystoneDisabledUserError:
+        except exceptions.KeystoneDisabledUserError:
             return (403, headers, "Access Forbidden")
 
-        except KeystoneUnknownUserError:
+        except exceptions.KeystoneUnknownUserError:
             return (404, headers, "Not Found")
 
-        except KeystoneUserError as ex:
+        except exceptions.KeystoneUserError as ex:
             self.log_error('Invalid Data - {0}'.format(ex))
             return (400, headers, "Invalid request")
 

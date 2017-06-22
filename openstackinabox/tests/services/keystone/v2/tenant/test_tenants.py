@@ -1,15 +1,12 @@
 """
 Stack-In-A-Box: Basic Test
 """
-import json
 import unittest
 
-import mock
 import requests
 import stackinabox.util.requests_mock.core
 from stackinabox.stack import StackInABox
 
-from openstackinabox.models.keystone.model import KeystoneModel
 from openstackinabox.services.keystone import KeystoneV2Service
 
 

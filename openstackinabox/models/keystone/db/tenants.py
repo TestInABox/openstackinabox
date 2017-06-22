@@ -1,4 +1,4 @@
-from openstackinabox.models.keystone.exceptions import *
+from openstackinabox.models.keystone import exceptions
 
 from openstackinabox.models.keystone.db.base import KeystoneDbBase
 
@@ -73,14 +73,14 @@ class KeystoneDbTenants(KeystoneDbBase):
         dbcursor = self.database.cursor()
         dbcursor.execute(SQL_ADD_TENANT, args)
         if not dbcursor.rowcount:
-            raise KeystoneTenantError('Unable to add tenant')
+            raise exceptions.KeystoneTenantError('Unable to add tenant')
 
         self.database.commit()
 
         dbcursor.execute(SQL_GET_MAX_TENANT_ID)
         tenant_data = dbcursor.fetchone()
         if tenant_data is None:
-            raise KeystoneTenantError(
+            raise exceptions.KeystoneTenantError(
                 'Unable to retrieve tenant_id for newly created tenant'
             )
 
@@ -117,7 +117,7 @@ class KeystoneDbTenants(KeystoneDbBase):
         dbcursor.execute(SQL_GET_TENANT_BY_ID, args)
         tenant_data = dbcursor.fetchone()
         if tenant_data is None:
-            raise KeystoneTenantError('Invalid tenant id')
+            raise exceptions.KeystoneTenantError('Invalid tenant id')
 
         return {
             'id': tenant_data[0],
@@ -134,7 +134,7 @@ class KeystoneDbTenants(KeystoneDbBase):
         dbcursor.execute(SQL_GET_TENANT_BY_NAME, args)
         tenant_data = dbcursor.fetchone()
         if tenant_data is None:
-            raise KeystoneTenantError('Invalid tenant name')
+            raise exceptions.KeystoneTenantError('Invalid tenant name')
 
         return {
             'id': tenant_data[0],
@@ -151,7 +151,7 @@ class KeystoneDbTenants(KeystoneDbBase):
         }
         dbcursor.execute(SQL_UPDATE_TENANT_DESCRIPTION, args)
         if not dbcursor.rowcount:
-            raise KeystoneTenantError('Invalid tenant id')
+            raise exceptions.KeystoneTenantError('Invalid tenant id')
 
         self.database.commit()
 
@@ -163,6 +163,6 @@ class KeystoneDbTenants(KeystoneDbBase):
         }
         dbcursor.execute(SQL_UPDATE_TENANT_STATUS, args)
         if not dbcursor.rowcount:
-            raise KeystoneTenantError('Invalid tenant id')
+            raise exceptions.KeystoneTenantError('Invalid tenant id')
 
         self.database.commit()

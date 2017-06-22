@@ -1,9 +1,7 @@
 import json
-import re
 
 from openstackinabox.services.base_service import BaseService
 from openstackinabox.services.keystone.v2.base import KeystoneV2ServiceBase
-from openstackinabox.services.keystone.v2.exceptions import *
 
 
 class KeystoneV2ServiceTenants(KeystoneV2ServiceBase):

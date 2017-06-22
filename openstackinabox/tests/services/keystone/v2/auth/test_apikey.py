@@ -5,7 +5,6 @@ import json
 import uuid
 
 import ddt
-import mock
 import requests
 import stackinabox.util.requests_mock.core
 

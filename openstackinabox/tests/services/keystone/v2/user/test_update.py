@@ -4,12 +4,10 @@ Stack-In-A-Box: Basic Test
 import json
 import unittest
 
-import mock
 import requests
 import stackinabox.util.requests_mock.core
 from stackinabox.stack import StackInABox
 
-from openstackinabox.models.keystone.model import KeystoneModel
 from openstackinabox.services.keystone import KeystoneV2Service
 
 
@@ -21,8 +19,10 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
         self.headers = {
             'x-auth-token': self.keystone.model.tokens.admin_token
         }
-        self.tenant_id = self.keystone.model.tenants.add(tenant_name='neo',
-                                                        description='The One')
+        self.tenant_id = self.keystone.model.tenants.add(
+            tenant_name='neo',
+            description='The One'
+        )
         self.user_info = {
             'user': {
                 'username': 'trinity',
@@ -74,7 +74,6 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
-            json_data = json.dumps(self.user_info)
             user_data = self.keystone.model.tokens.get_by_user_id(
                 self.user_info['user']['userid'])
             self.headers['x-auth-token'] = user_data['token']
@@ -89,7 +88,6 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost'
             )
-            json_data = json.dumps(self.user_info)
             user_data = self.keystone.model.tokens.get_by_user_id(
                 self.user_info['user']['userid']
             )
@@ -107,7 +105,6 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
-            json_data = json.dumps(self.user_info)
             user_data = self.keystone.model.tokens.get_by_user_id(
                 self.user_info['user']['userid'])
             self.headers['x-auth-token'] = user_data['token']
@@ -126,7 +123,6 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
-            json_data = json.dumps(self.user_info)
             user_data = self.keystone.model.tokens.get_by_user_id(
                 self.user_info['user']['userid'])
             self.headers['x-auth-token'] = user_data['token']
@@ -144,7 +140,6 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
-            json_data = json.dumps(self.user_info)
             user_data = self.keystone.model.tokens.get_by_user_id(
                 self.user_info['user']['userid'])
             self.headers['x-auth-token'] = user_data['token']
@@ -162,7 +157,6 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
-            json_data = json.dumps(self.user_info)
             user_data = self.keystone.model.tokens.get_by_user_id(
                 self.user_info['user']['userid'])
             self.headers['x-auth-token'] = user_data['token']
@@ -180,7 +174,6 @@ class TestKeystoneV2UserUpdate(unittest.TestCase):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost')
-            json_data = json.dumps(self.user_info)
             user_data = self.keystone.model.tokens.get_by_user_id(
                 self.user_info['user']['userid'])
             self.headers['x-auth-token'] = user_data['token']

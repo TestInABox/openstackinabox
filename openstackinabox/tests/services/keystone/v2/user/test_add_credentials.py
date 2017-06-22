@@ -5,12 +5,10 @@ Stack-In-A-Box: Add Credentials to User
 import json
 import unittest
 
-import mock
 import requests
 import stackinabox.util.requests_mock.core
 from stackinabox.stack import StackInABox
 
-from openstackinabox.models.keystone.model import KeystoneModel
 from openstackinabox.services.keystone import KeystoneV2Service
 
 
@@ -164,7 +162,7 @@ class TestKeystoneV2UserAddCredentials(unittest.TestCase):
             )
             self.assertEqual(res.status_code, 401)
 
-    def test_user_add_credentials_invalid_token(self):
+    def test_user_add_credentials_invalid_token_2(self):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost'

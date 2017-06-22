@@ -1,4 +1,4 @@
-from openstackinabox.models.keystone.exceptions import *
+from openstackinabox.models.keystone import exceptions
 
 from openstackinabox.models.keystone.db.base import KeystoneDbBase
 
@@ -104,7 +104,7 @@ class KeystoneDbUsers(KeystoneDbBase):
         dbcursor.execute(SQL_GET_MAX_USER_ID)
         user_data = dbcursor.fetchone()
         if user_data is None:
-            raise KeystoneUserError('Unable to add user')
+            raise exceptions.KeystoneUserError('Unable to add user')
 
         user_id = user_data[0]
 
@@ -125,7 +125,7 @@ class KeystoneDbUsers(KeystoneDbBase):
         }
         dbcursor = self.database.cursor()
         dbcursor.execute(SQL_DELETE_USER, args)
-        user_data = dbcursor.fetchone()
+        dbcursor.fetchone()
         self.database.commit()
 
     def get_by_id(self, tenant_id=None, user_id=None):
@@ -137,7 +137,9 @@ class KeystoneDbUsers(KeystoneDbBase):
         dbcursor.execute(SQL_GET_USER_BY_USERID, args)
         user_data = dbcursor.fetchone()
         if user_data is None:
-            raise KeystoneUnknownUserError('Invalid tenant_id or user_id')
+            raise exceptions.KeystoneUnknownUserError(
+                'Invalid tenant_id or user_id'
+            )
 
         return {
             'tenant_id': user_data[0],
@@ -158,7 +160,9 @@ class KeystoneDbUsers(KeystoneDbBase):
         dbcursor.execute(SQL_GET_USER_BY_USERNAME_AND_TENANT, args)
         user_data = dbcursor.fetchone()
         if user_data is None:
-            raise KeystoneUnknownUserError('Invalid tenant_id or username')
+            raise exceptions.KeystoneUnknownUserError(
+                'Invalid tenant_id or username'
+            )
 
         return {
             'tenant_id': user_data[0],
@@ -205,8 +209,9 @@ class KeystoneDbUsers(KeystoneDbBase):
         }
         dbcursor.execute(SQL_UPDATE_USER_BY_USERID, args)
         if not dbcursor.rowcount:
-            raise KeystoneUnknownUserError('unable to update user - {0}'
-                                           .format(args))
+            raise exceptions.KeystoneUnknownUserError(
+                'unable to update user - {0}'.format(args)
+            )
 
         self.database.commit()
 
