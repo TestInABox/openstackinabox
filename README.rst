@@ -5,13 +5,13 @@ OpenStack-In-A-Box
 Stack-In-A-Box-based OpenStack Services for use with Testing Framesworks
 
 
-.. image:: https://travis-ci.org/BenjamenMeyer/openstackinabox.svg?branch=master
-   :target: https://travis-ci.org/BenjamenMeyer/openstackinabox
+.. image:: https://travis-ci.org/TestInABox/openstackinabox.svg?branch=master
+   :target: https://travis-ci.org/TestInABox/openstackinabox
    :alt: Travis-CI Status
 
 
-.. image:: https://coveralls.io/repos/BenjamenMeyer/openstackinabox/badge.svg
-  :target: https://coveralls.io/r/BenjamenMeyer/openstackinabox
+.. image:: https://coveralls.io/repos/TestInABox/openstackinabox/badge.svg
+  :target: https://coveralls.io/r/TestInABox/openstackinabox
   :alt: Coverage Status
 
 ========
@@ -77,6 +77,6 @@ Working with Frameworks
 References
 ==========
 
-- ``Stack-In-A-Box`` - https://github.com/BenjamenMeyer/stackInABox/
+- ``Stack-In-A-Box`` - https://github.com/TestInABox/stackInABox/
 - ``OpenStack`` - https://www.openstack.org/
 - ``OpenStack Keystone`` - http://docs.openstack.org/developer/keystone/
