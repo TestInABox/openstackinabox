@@ -3,11 +3,8 @@ Stack-In-A-Box: Basic Test
 """
 import json
 import random
-import unittest
-import uuid
 
 import ddt
-import mock
 import requests
 import stackinabox.util.requests_mock.core
 

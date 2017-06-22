@@ -1,6 +1,3 @@
-import unittest
-import uuid
-
 import ddt
 import six
 

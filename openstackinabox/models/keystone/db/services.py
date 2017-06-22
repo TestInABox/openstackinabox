@@ -1,4 +1,4 @@
-from openstackinabox.models.keystone.exceptions import *
+from openstackinabox.models.keystone import exceptions
 
 from openstackinabox.models.keystone.db.base import KeystoneDbBase
 
@@ -49,13 +49,15 @@ class KeystoneDbServices(KeystoneDbBase):
         }
         dbcursor.execute(SQL_ADD_SERVICE, args)
         if not dbcursor.rowcount:
-            raise KeystoneServiceCatalogServiceError('Unable to add service')
+            raise exceptions.KeystoneServiceCatalogServiceError(
+                'Unable to add service'
+            )
         self.database.commit()
 
         dbcursor.execute(SQL_GET_MAX_SERVICE_ID)
         service_data = dbcursor.fetchone()
         if service_data is None:
-            raise KeystoneServiceCatalogServiceError(
+            raise exceptions.KeystoneServiceCatalogServiceError(
                 "Unable to add service"
             )
 
@@ -93,7 +95,7 @@ class KeystoneDbServices(KeystoneDbBase):
         dbcursor.execute(SQL_REMOVE_SERVICE, args)
 
         if not dbcursor.rowcount:
-            raise KeystoneServiceCatalogServiceError(
+            raise exceptions.KeystoneServiceCatalogServiceError(
                 'Unable to remove service'
             )
 

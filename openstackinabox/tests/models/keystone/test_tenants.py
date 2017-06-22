@@ -1,9 +1,4 @@
-import mock
-import unittest
-import uuid
-
 import ddt
-import six
 
 from openstackinabox.tests.base import TestBase, DbFailure
 

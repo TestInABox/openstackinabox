@@ -2,16 +2,12 @@
 OpenStack Keystone Model
 """
 import copy
-import datetime
-import random
-import re
 import sqlite3
-import uuid
 
 import six
 
-from openstackinabox.models.base_model import *
-from openstackinabox.models.keystone.exceptions import *
+from openstackinabox.models import base_model
+from openstackinabox.models.keystone import exceptions
 
 from openstackinabox.models.keystone.db.endpoints import (
     KeystoneDbServiceEndpoints
@@ -122,7 +118,7 @@ SQL_ADD_END_POINT = '''
 '''
 
 
-class KeystoneModel(BaseModel):
+class KeystoneModel(base_model.BaseModel):
 
     CHILD_MODELS = {
         'roles': KeystoneDbRoles,
@@ -235,7 +231,7 @@ class KeystoneModel(BaseModel):
         except Exception as ex:
             self.log_exception('Error: {0}'.format(ex))
 
-        raise KeystoneInvalidTokenError('Invalid Token')
+        raise exceptions.KeystoneInvalidTokenError('Invalid Token')
 
     def validate_token_service_admin(self, token):
         try:
@@ -256,7 +252,9 @@ class KeystoneModel(BaseModel):
         except Exception as ex:
             self.log_exception('Error: {0}'.format(ex))
 
-        raise KeystoneInvalidTokenError('Not the service admin token')
+        raise exceptions.KeystoneInvalidTokenError(
+            'Not the service admin token'
+        )
 
     def get_auth_token_entry(self, token_data, user_data):
         # build the 'auth' section of the service catalog
@@ -351,11 +349,11 @@ class KeystoneModel(BaseModel):
     def password_authenticate(self, password_data):
         if not self.users.validate_username(password_data['username']):
             self.log_error('Username Validation Failed')
-            raise KeystoneUserError('Invalid User Data - Username')
+            raise exceptions.KeystoneUserError('Invalid User Data - Username')
 
         if not self.users.validate_password(password_data['password']):
             self.log_error('Password Validation Failed')
-            raise KeystoneUserError('Invalid User Data - Password')
+            raise exceptions.KeystoneUserError('Invalid User Data - Password')
 
         user = None
         user_counter = 0
@@ -369,13 +367,17 @@ class KeystoneModel(BaseModel):
 
         if user is None:
             if user_counter:
-                raise KeystoneUserInvalidPasswordError('Bad Password')
+                raise exceptions.KeystoneUserInvalidPasswordError(
+                    'Bad Password'
+                )
 
             else:
-                raise KeystoneUnknownUserError('Unable to locate user')
+                raise exceptions.KeystoneUnknownUserError(
+                    'Unable to locate user'
+                )
 
         if user['enabled'] is False:
-            raise KeystoneDisabledUserError('User is disabled')
+            raise exceptions.KeystoneDisabledUserError('User is disabled')
 
         self.tokens.add(
             tenant_id=user['tenant_id'],
@@ -391,11 +393,11 @@ class KeystoneModel(BaseModel):
     def apikey_authenticate(self, apikey_data):
         if not self.users.validate_username(apikey_data['username']):
             self.log_error('Username Validation Failed')
-            raise KeystoneUserError('Invalid User Data - Username')
+            raise exceptions.KeystoneUserError('Invalid User Data - Username')
 
         if not self.users.validate_apikey(apikey_data['apiKey']):
             self.log_error('API Key Validation Failed')
-            raise KeystoneUserError('Invalid User Data - API Key')
+            raise exceptions.KeystoneUserError('Invalid User Data - API Key')
 
         user = None
         user_counter = 0
@@ -409,13 +411,17 @@ class KeystoneModel(BaseModel):
 
         if user is None:
             if user_counter:
-                raise KeystoneUserInvalidApiKeyError('Bad API Key')
+                raise exceptions.KeystoneUserInvalidApiKeyError('Bad API Key')
 
             else:
-                raise KeystoneUnknownUserError('Unable to locate user')
+                raise exceptions.KeystoneUnknownUserError(
+                    'Unable to locate user'
+                )
 
         if user['enabled'] is False:
-            raise KeystoneDisabledUserError('User is disabled')
+            raise exceptions.KeystoneDisabledUserError(
+                'User is disabled'
+            )
 
         self.tokens.add(
             tenant_id=user['tenant_id'],
@@ -433,17 +439,19 @@ class KeystoneModel(BaseModel):
             tenant_id = auth_data['tenantId']
             token = auth_data['token']['id']
         except KeyError as ex:
-            raise KeystoneUserError('Invalid user Data - {0}'.format(ex))
+            raise exceptions.KeystoneUserError(
+                'Invalid user Data - {0}'.format(ex)
+            )
 
         if not self.tenants.validate_tenant_id(tenant_id):
             self.log_error('Username Validation Failed')
-            raise KeystoneUserError('Invalid User Data - Username')
+            raise exceptions.KeystoneUserError('Invalid User Data - Username')
 
         token_data = self.tokens.validate_token(token)
 
         tenant_data = self.tenants.get_by_id(tenant_id=tenant_id)
         if not tenant_data['enabled']:
-            raise KeystoneTenantError('Tenant is disabled')
+            raise exceptions.KeystoneTenantError('Tenant is disabled')
 
         user = None
         user_counter = 0
@@ -455,10 +463,10 @@ class KeystoneModel(BaseModel):
                 user = user_data
 
         if user is None:
-            raise KeystoneUnknownUserError('Unable to locate user')
+            raise exceptions.KeystoneUnknownUserError('Unable to locate user')
 
         if user['enabled'] is False:
-            raise KeystoneDisabledUserError('User is disabled')
+            raise exceptions.KeystoneDisabledUserError('User is disabled')
 
         # side-effects if token revoked or expired
         self.tokens.check_expiration(token_data)
@@ -468,13 +476,17 @@ class KeystoneModel(BaseModel):
     def tenant_name_token_auth(self, auth_data):
         try:
             tenant_name = auth_data['tenantName']
-            token = auth_data['token']['id']
+            auth_data['token']['id']
         except KeyError as ex:
-            raise KeystoneUserError('Invalid user Data - {0}'.format(ex))
+            raise exceptions.KeystoneUserError(
+                'Invalid user Data - {0}'.format(ex)
+            )
 
         if not self.tenants.validate_tenant_name(tenant_name):
             self.log_error('Tenant Name Validation Failed')
-            raise KeystoneUserError('Invalid User Data - Tenant Name')
+            raise exceptions.KeystoneUserError(
+                'Invalid User Data - Tenant Name'
+            )
 
         tenant_data = self.tenants.get_by_name(tenant_name=tenant_name)
 

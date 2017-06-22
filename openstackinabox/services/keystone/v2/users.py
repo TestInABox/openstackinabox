@@ -1,12 +1,10 @@
 import json
-import re
 
 import six
 from six.moves.urllib import parse
 
 from openstackinabox.services.base_service import BaseService
 from openstackinabox.services.keystone.v2.base import KeystoneV2ServiceBase
-from openstackinabox.services.keystone.v2.exceptions import *
 
 
 class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
@@ -178,7 +176,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
                 return (400, headers, 'bad request')
 
         try:
-            user_info = self.model.users.add(
+            self.model.users.add(
                 tenant_id=current_user['tenant_id'],
                 username=username,
                 email=email,
@@ -374,7 +372,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
             return (400, headers, 'bad request')
 
         try:
-            user_info = self.model.users.get_by_id(
+            self.model.users.get_by_id(
                 tenant_id=user_data['tenantid'],
                 user_id=user_id
             )

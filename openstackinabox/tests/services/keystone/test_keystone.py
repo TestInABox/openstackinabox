@@ -1,10 +1,8 @@
 """
 Stack-In-A-Box: Basic Test
 """
-import json
 import unittest
 
-import mock
 import requests
 from stackinabox.stack import StackInABox
 

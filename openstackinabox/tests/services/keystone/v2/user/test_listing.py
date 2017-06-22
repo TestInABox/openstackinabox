@@ -1,15 +1,12 @@
 """
 Stack-In-A-Box: Basic Test
 """
-import json
 import unittest
 
-import mock
 import requests
 import stackinabox.util.requests_mock.core
 from stackinabox.stack import StackInABox
 
-from openstackinabox.models.keystone.model import KeystoneModel
 from openstackinabox.services.keystone import KeystoneV2Service
 
 
@@ -53,12 +50,14 @@ class TestKeystoneV2UserListing(unittest.TestCase):
             neo_tenant_id = self.keystone.model.tenants.add(
                 tenant_name='neo',
                 description='The One')
-            tom = self.keystone.model.users.add(neo_tenant_id,
-                                               'tom',
-                                               'tom@theone.matrix',
-                                               'bluepill',
-                                               'iamnottheone',
-                                               enabled=True)
+            tom = self.keystone.model.users.add(
+                neo_tenant_id,
+                'tom',
+                'tom@theone.matrix',
+                'bluepill',
+                'iamnottheone',
+                enabled=True
+            )
 
             self.keystone.model.roles.add_user_role_by_role_name(
                 neo_tenant_id,
@@ -75,12 +74,14 @@ class TestKeystoneV2UserListing(unittest.TestCase):
 
             self.assertEqual(len(user_data['users']), 1)
 
-            self.keystone.model.users.add(neo_tenant_id,
-                                         'neo',
-                                         'neo@theone.matrix',
-                                         'redpill',
-                                         'iamtheone',
-                                         enabled=True)
+            self.keystone.model.users.add(
+                neo_tenant_id,
+                'neo',
+                'neo@theone.matrix',
+                'redpill',
+                'iamtheone',
+                enabled=True
+            )
 
             res = requests.get('http://localhost/keystone/v2.0/users',
                                headers=self.headers)
@@ -97,12 +98,14 @@ class TestKeystoneV2UserListing(unittest.TestCase):
             neo_tenant_id = self.keystone.model.tenants.add(
                 tenant_name='neo',
                 description='The One')
-            tom = self.keystone.model.users.add(neo_tenant_id,
-                                               'tom',
-                                               'tom@theone.matrix',
-                                               'bluepill',
-                                               'iamnottheone',
-                                               enabled=True)
+            tom = self.keystone.model.users.add(
+                neo_tenant_id,
+                'tom',
+                'tom@theone.matrix',
+                'bluepill',
+                'iamnottheone',
+                enabled=True
+            )
 
             self.keystone.model.roles.add_user_role_by_role_name(
                 neo_tenant_id,
@@ -119,12 +122,14 @@ class TestKeystoneV2UserListing(unittest.TestCase):
 
             self.assertEqual(len(user_data['users']), 1)
 
-            self.keystone.model.users.add(neo_tenant_id,
-                                         'neo',
-                                         'neo@theone.matrix',
-                                         'redpill',
-                                         'iamtheone',
-                                         enabled=True)
+            self.keystone.model.users.add(
+                neo_tenant_id,
+                'neo',
+                'neo@theone.matrix',
+                'redpill',
+                'iamtheone',
+                enabled=True
+            )
 
             res = requests.get('http://localhost/keystone/v2.0/users?name=tom',
                                headers=self.headers)

@@ -1,4 +1,4 @@
-from openstackinabox.models.keystone.exceptions import *
+from openstackinabox.models.keystone import exceptions
 
 from openstackinabox.models.keystone.db.base import KeystoneDbBase
 
@@ -59,7 +59,7 @@ class KeystoneDbRoles(KeystoneDbBase):
         }
         dbcursor.execute(SQL_ADD_ROLE, args)
         if not dbcursor.rowcount:
-            raise KeystoneRoleError('Unable to add role')
+            raise exceptions.KeystoneRoleError('Unable to add role')
 
         self.database.commit()
 
@@ -73,7 +73,7 @@ class KeystoneDbRoles(KeystoneDbBase):
         dbcursor.execute(SQL_GET_ROLE_ID, args)
         role_data = dbcursor.fetchone()
         if role_data is None:
-            raise KeystoneRoleError('Invalid role name')
+            raise exceptions.KeystoneRoleError('Invalid role name')
 
         return {
             'id': role_data[0],
@@ -97,12 +97,12 @@ class KeystoneDbRoles(KeystoneDbBase):
         try:
             dbcursor.execute(SQL_ADD_USER_ROLE, args)
         except Exception as ex:
-            raise KeystoneRoleError(
+            raise exceptions.KeystoneRoleError(
                 'Unable to create role: - {0}'.format(ex)
             )
 
         if not dbcursor.rowcount:
-            raise KeystoneRoleError(
+            raise exceptions.KeystoneRoleError(
                 'Unable to assign role to tenant_id/user_id'
             )
 

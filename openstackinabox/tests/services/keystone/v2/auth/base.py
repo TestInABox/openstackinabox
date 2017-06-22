@@ -1,11 +1,9 @@
-import random
 import uuid
 
 import unittest
 
 from stackinabox.stack import StackInABox
 
-from openstackinabox.models.keystone.model import KeystoneModel
 from openstackinabox.services.keystone import KeystoneV2Service
 
 
