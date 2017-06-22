@@ -7,7 +7,7 @@ setup(
     version='0.1',
     description='RESTful API Testing Suite',
     license='Apache License 2.0',
-    url='https://github.com/BenjamenMeyer/openstackinabox',
+    url='https://github.com/TestInABox/openstackinabox',
     author='Benjamen R. Meyer',
     author_email='ben.meyer@rackspace.com',
     install_requires=REQUIRES,
