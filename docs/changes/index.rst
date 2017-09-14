@@ -1,0 +1,6 @@
+ChangeLog
+=========
+
+.. toctree::
+
+    latest <latest>
