@@ -1,8 +1,7 @@
 """
+OpenStackInABox Service Manager
 """
-import uuid
-
-import StackInABox
+from stackinabox.stack import StackInABox
 import six
 
 from openstackinabox.services import (
@@ -104,6 +103,19 @@ class OpenStackServicesManager(object):
         be ignored and do not even need to be specified.
     """
 
+    SERVICE_CLASS = 'service'
+    SERVICE_INSTANCE = 'instance'
+    SERVICE_REGISTRATIONS = 'registrations'
+    SERVICE_ACCESS = 'access'
+    SERVICE_IN_CATALOG = 'in_service_catalog'
+    SERVICE_NEED_KEYSTONE = 'keystone_service'
+    SERVICE_ENTRIES = 'entries'
+    SERVICE_ENTRIES_VERSION = 'version'
+    SERVICE_ENTRIES_TYPE = 'type'
+    SERVICE_ENTRIES_NAME = 'name'
+    SERVICE_ENTRIES_URLS = 'urls'
+    SERVICE_ENTRIES_REGIONS = 'regions'
+
     def __init__(self):
         self._keystone_service = None
         self._identity_url_template = "https://{0}/keystone/v2.0/"
@@ -115,31 +127,31 @@ class OpenStackServicesManager(object):
         self._available_services = {
             'Keystone': {
                 'v2': {
-                    'service': keystone.KeystoneV2Service
-                    'access': {
-                        'in_service_catalog': False,
-                        'keystone_service': None,
+                    self.SERVICE_CLASS: keystone.KeystoneV2Service,
+                    self.SERVICE_ACCESS: {
+                        self.SERVICE_IN_CATALOG: False,
+                        self.SERVICE_NEED_KEYSTONE: None,
                     },
-                    'entries': [
+                    self.SERVICE_ENTRIES: [
                         {
-                            'version': 2,
+                            self.SERVICE_ENTRIES_VERSION: 2,
                         }
                     ]
                 }
             },
             'Cinder': {
                 'v1': {
-                    'service': cinder.CinderV1Service,
-                    'access': {
-                        'in_service_catalog': True,
-                        'keystone_service': 'v2',
+                    self.SERVICE_CLASS: cinder.CinderV1Service,
+                    self.SERVICE_ACCESS: {
+                        self.SERVICE_IN_CATALOG: True,
+                        self.SERVICE_NEED_KEYSTONE: 'v2',
                     },
-                    'entries': [
+                    self.SERVICE_ENTRIES: [
                         {
-                            'version': 1
-                            'type': 'volume'
-                            'name': 'cloudBlockStorage'
-                            'urls': {
+                            self.SERVICE_ENTRIES_VERSION: 1,
+                            self.SERVICE_ENTRIES_TYPE: 'volume',
+                            self.SERVICE_ENTRIES_NAME: 'cloudBlockStorage',
+                            self.SERVICE_ENTRIES_URLS: {
                                 'publicURL': 'https://{0}/cinder/v1/'
                             }
                         }
@@ -205,24 +217,40 @@ class OpenStackServicesManager(object):
         :retval: dict containign the service data
         """
         try:
-            return self._active_services[service_name][service_version]['instance']
+            return (
+                self._active_services[service_name][service_version][
+                    self.SERVICE_INSTANCE]
+            )
 
         except KeyError:
             raise ServiceNotAvailable(
-                'Service {0} with version {1} has not been activated yet'.format(
+                'Service {0} with version {1} has not been '
+                'activated yet'.format(
                     service_name,
                     service_version
                 )
             )
 
     def reset_all_services(self):
+        removal_set = []
         for service_name, service_version in six.iteritems(
             self._active_services
         ):
-            self.del_service(
-            )
+            for version, info in six.iteritems(service_version):
+                regions = []
+                if self.SERVICE_REGISTRATIONS in info:
+                    for r in info[self.SERVICE_REGISTRATIONS]:
+                        regions.extend(r[self.SERVICE_ENTRIES_REGIONS])
+                removal_set.append(
+                    (service_name, version, regions)
+                )
+        for entry in removal_set:
+            self.del_service(*entry)
+        self._active_services = {}
 
-    def add_service(self, service_name, service_version, service_data, regions):
+    def add_service(
+        self, service_name, service_version, service_data, regions
+    ):
         """
         Add a specific service and version in a given set of regions
 
@@ -253,7 +281,7 @@ class OpenStackServicesManager(object):
         entry will be included in the service catalog. Each dict the
         service_data['entries'] is converted into a Service Catalog
         registration, at which point the URLs formatted with the Base URL.
-        
+
         .. note:: All regions instantiated will point to the same StackInABox
             Service instance. To get true multi-region support, simply set the
             Base URL to a region specific value (e.g localhost.region1), and
@@ -273,33 +301,51 @@ class OpenStackServicesManager(object):
             self._active_services[service_name] = {}
 
         if service_version not in self._active_services[service_name]:
+            self._active_services[service_name][service_version] = {}
+
+        registrations = []
+        if service_data[self.SERVICE_ACCESS][self.SERVICE_IN_CATALOG]:
+            registrations.extend(
+                [
+                    {
+                        self.SERVICE_ENTRIES_NAME: entry[
+                            self.SERVICE_ENTRIES_NAME],
+                        self.SERVICE_ENTRIES_TYPE: entry[
+                            self.SERVICE_ENTRIES_TYPE],
+                        self.SERVICE_ENTRIES_VERSION: entry[
+                            self.SERVICE_ENTRIES_VERSION],
+                        self.SERVICE_ENTRIES_REGIONS: regions,
+                        self.SERVICE_ENTRIES_URLS: entry[
+                            self.SERVICE_ENTRIES_URLS]
+                    }
+                    for entry in service_data[self.SERVICE_ENTRIES]
+                ]
+            )
+
+        if (
+            self.SERVICE_INSTANCE not in
+            self._active_services[service_name][service_version]
+        ):
             args = []
-            if service_data['keystone_service'] is not None:
+            if (
+                service_data[self.SERVICE_ACCESS][
+                    self.SERVICE_NEED_KEYSTONE] is not None
+            ):
                 args.append(
-                    self._get_service(
+                    self.get_service(
                         'Keystone',
-                        service_data['keystone_service']
+                        service_data[self.SERVICE_ACCESS][
+                            self.SERVICE_NEED_KEYSTONE]
                     )
-                )
-            registrations = []
-            if service_data['in_service_catalog']:
-                registrations.extend(
-                    [
-                        {
-                            'name': entry['name'],
-                            'type': entry['type'],
-                            'version': entry['version'],
-                            'regions': regions,
-                            'urls': entry['urls']
-                            for entry in service_data['entries']
-                        }
-                    ]
                 )
 
             self._active_services[service_name][service_version] = {
-                'instance': service_data['service'](*args),
-                'registrations': registrations
+                self.SERVICE_INSTANCE: service_data[self.SERVICE_CLASS](*args),
+                self.SERVICE_REGISTRATIONS: registrations
             }
+        else:
+            self._active_services[service_name][service_version][
+                self.SERVICE_REGISTRATIONS].extend(registrations)
 
     def del_service(self, service_name, service_version, regions):
         """
@@ -309,63 +355,67 @@ class OpenStackServicesManager(object):
             services, and can be used to remove random services from the
             system.
 
-        The service_data dict has the following format:
-
-            {
-                'service': <Uninstantiated StackInABox Service Class>,
-                'access': {
-                    'in_service_catalog': bool,
-                    'keystone_service': None
-                }
-                'entries: [
-                    {
-                        'version': <service version>,
-                        'type': <service catalog service type>,
-                        'name': <service catalog service name>,
-                        'urls': {
-                            <url name>: <url format>
-                        }
-                    }
-                ]
-            }
-
-        If the service_data['access']['in_service_catalog'] is True then the
-        entry will be included in the service catalog. Each dict the
-        service_data['entries'] is converted into a Service Catalog
-        registration, at which point the URLs formatted with the Base URL.
-        
-        .. note:: All regions instantiated will point to the same StackInABox
-            Service instance. To get true multi-region support, simply set the
-            Base URL to a region specific value (e.g localhost.region1), and
-            then add the services for that region.
-
         :param unicode service_name: name of the service
         :param unicode service_version: version of the service
-        :param list regions: list of regions the service is to be available in
-
-        :raises: ServiceNotAvailable if the service is not supported
-        :raises: ServiceVersionNotAvailable if the service version is not
-            supported
+        :param list regions: list of regions to remove the service from
         """
-        if service_name in self._active_services:
-            if service_version in self._active_services:
-                for region in regions:
-                    while region in (
-                        self._active_services[
-                            service_name][service_version]['regions']
-                    ):
-                        self._active_services[\
-                            service_name][service_version]['regions'].remove(
-                            region
-                        )
-                        
-                if not len(
-                    self._active_services[
-                        service_name][service_version]['regions']
+        def remove_region(registration_count):
+            for region in regions:
+                if (
+                    region in self._active_services[service_name][
+                        service_version][self.SERVICE_REGISTRATIONS][
+                            registration_count][self.SERVICE_ENTRIES_REGIONS]
                 ):
+                    self._active_services[service_name][service_version][
+                        self.SERVICE_REGISTRATIONS][registration_count][
+                            self.SERVICE_ENTRIES_REGIONS].remove(
+                        region
+                    )
+
+        def remove_registrations():
+                total_registrations = len(
+                    self._active_services[
+                        service_name][service_version][
+                            self.SERVICE_REGISTRATIONS]
+                )
+
+                registrations_to_remove = []
+                for registration_count in range(total_registrations):
+                    remove_region(registration_count)
+                    if not len(self._active_services[
+                        service_name][service_version][
+                            self.SERVICE_REGISTRATIONS][registration_count][
+                                self.SERVICE_ENTRIES_REGIONS]
+                    ):
+                        registrations_to_remove.append(registration_count)
+
+                registrations_to_remove.reverse()
+
+                for count in registrations_to_remove:
+                    del self._active_services[
+                        service_name][service_version][
+                            self.SERVICE_REGISTRATIONS][count]
+
+        def remove_version():
+            if service_version in self._active_services[service_name]:
+                if (
+                    self.SERVICE_REGISTRATIONS in self._active_services[
+                        service_name][service_version]
+                ):
+                    remove_registrations()
+                    if not len(
+                        self._active_services[service_name][service_version][
+                            self.SERVICE_REGISTRATIONS]
+                    ):
+                        del self._active_services[service_name][
+                            service_version]
+                else:
                     del self._active_services[service_name][service_version]
-            # else nothing to do
-        # else nothing to do
+
+        if service_name in self._active_services:
+            remove_version()
+            if not len(self._active_services[service_name]):
+                del self._active_services[service_name]
 
     def activate_service(self, service_name, service_version, regions):
         """
@@ -449,30 +499,40 @@ class OpenStackServicesManager(object):
         )
         for service_name, service in six.iteritems(self._active_services):
             for service_version, service_data in six.iteritems(service):
-                for registration in service_data['registration']:
-                    service_id = self.keystone_service.model.services.add(
-                        registration['name'],
-                        registration['type']
-                    )
-                    for region in registration['regions']:
-                        endpoint_id = self.keystone_service.model.endpoints.add(
-                            service_id,
-                            region,
-                            '',  # no version info
-                            '',  # no version list
-                            registration['version']
+                if self.SERVICE_REGISTRATIONS in service_data:
+                    for registration in service_data[
+                        self.SERVICE_REGISTRATIONS
+                    ]:
+                        service_id = self.keystone_service.model.services.add(
+                            registration[self.SERVICE_ENTRIES_NAME],
+                            registration[self.SERVICE_ENTRIES_TYPE]
                         )
-                        for url_name, url in six.iteritems(registration['urls']):
-                            self.keystone_service.model.endpoints.add_url(
-                                endpoint_id,
-                                url_name,
-                                url.format(self.base_url)
-                            )
+                        for region in registration[
+                            self.SERVICE_ENTRIES_REGIONS
+                        ]:
+                            endpoint_id = self.keystone_service.model.\
+                                endpoints.add(
+                                    service_id,
+                                    region,
+                                    '',  # no version info
+                                    '',  # no version list
+                                    registration[self.SERVICE_ENTRIES_VERSION]
+                                )
+                            for url_name, url in six.iteritems(
+                                registration[self.SERVICE_ENTRIES_URLS]
+                            ):
+                                self.keystone_service.model.endpoints.add_url(
+                                    endpoint_id,
+                                    url_name,
+                                    url.format(self.base_url)
+                                )
 
     def register_services(self):
         """
         Register the Active OpenStack services with StackInABox
         """
-        for service in six.iteritems(self._active_actives):
-            for service_version in six.iteritems(service):
-                StackInABox.register_service(service['instance'])
+        for service_name, service in six.iteritems(self._active_services):
+            for service_version, service_data in six.iteritems(service):
+                StackInABox.register_service(
+                    service_data[self.SERVICE_INSTANCE]
+                )

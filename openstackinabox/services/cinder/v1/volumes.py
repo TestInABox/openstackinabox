@@ -1,7 +1,7 @@
 import json
 import re
 
-from openstackinabox.services.cinder import base
+from openstackinabox.services.cinder.v1 import base
 
 
 class CinderV1Volumes(base.CinderV1ServiceBase):
