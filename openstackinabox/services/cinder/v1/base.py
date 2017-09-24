@@ -1,9 +1,8 @@
 import uuid
 
+from openstackinabox.models.cinder import model
 from openstackinabox.services import base_service
 from openstackinabox.services.keystone.v2 import exceptions
-
-from openstackinabox.models.cinder import model
 
 
 class CinderV1ServiceBase(base_service.BaseService):
@@ -35,11 +34,10 @@ class CinderV1ServiceBase(base_service.BaseService):
 
         try:
             auth_token = request_headers['x-auth-token']
-
+            user_data = None
             self.log_debug('Service Admin Required: {0}'.format(service_admin))
             self.log_debug('Enforce Admin Required: {0}'.format(enforce_admin))
 
-            user_data = None
             if service_admin:
                 user_data = self.__keystone.model.validate_token_service_admin(
                     auth_token
@@ -60,7 +58,7 @@ class CinderV1ServiceBase(base_service.BaseService):
                     user_data['userid']
                 )
             )
-        except Exception:
+        except Exception as ex:
             self.log_exception('invalid or expired auth token')
             raise exceptions.KeystoneV2AuthUnauthorizedError(
                 'invalid or expired auth token'
@@ -70,6 +68,7 @@ class CinderV1ServiceBase(base_service.BaseService):
 
     def helper_authenticate(self, request_headers, headers,
                             enforce_admin, service_admin):
+
         try:
             user_data = self.helper_validate_token(
                 request_headers,
