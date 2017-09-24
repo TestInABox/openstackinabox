@@ -6,6 +6,14 @@ from openstackinabox.models import base_model
 
 
 schema = [
+    '''
+        CREATE TABLE cinder_volume_types
+        (
+            typeid INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            extra_specs TEXT
+        )
+    '''
 ]
 
 
