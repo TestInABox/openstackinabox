@@ -1,9 +1,7 @@
 """
 """
-import json
 import unittest
 
-import mock
 import requests
 import stackinabox.util.requests_mock.core
 from stackinabox.stack import StackInABox

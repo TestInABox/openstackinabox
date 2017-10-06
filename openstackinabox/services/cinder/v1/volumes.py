@@ -33,16 +33,6 @@ class CinderV1Volumes(base.CinderV1ServiceBase):
                 'handler': CinderV1Volumes.handle_retrieve_volumes
             },
             {
-                'verb': base.CinderV1ServiceBase.GET,
-                'path': self.ALL_VOLUMES_DETAILED,
-                'handler': CinderV1Volumes.handle_retrieve_volumes_detailed
-            },
-            {
-                'verb': base.CinderV1ServiceBase.GET,
-                'path': self.SPECIFIC_VOLUME,
-                'handler': CinderV1Volumes.handle_retrieve_volume_details
-            },
-            {
                 'verb': base.CinderV1ServiceBase.PUT,
                 'path': self.SPECIFIC_VOLUME,
                 'handler': CinderV1Volumes.handle_update_volume
@@ -51,6 +41,16 @@ class CinderV1Volumes(base.CinderV1ServiceBase):
                 'verb': base.CinderV1ServiceBase.DELETE,
                 'path': self.SPECIFIC_VOLUME,
                 'handler': CinderV1Volumes.handle_delete_volume
+            },
+            {
+                'verb': base.CinderV1ServiceBase.GET,
+                'path': self.SPECIFIC_VOLUME,
+                'handler': CinderV1Volumes.get_subroute
+                # NOTE: There is a conflict between SPECIFIC_VOLUME and
+                #   ALL_VOLUMES when it comes to the GET verb. Therefore
+                #   a special sub-router is required to propery direct
+                #   the request as StackInABox doesn't allow two registrations
+                #   on the same VERB where the path may match.
             }
         ]
 
@@ -59,6 +59,17 @@ class CinderV1Volumes(base.CinderV1ServiceBase):
                 handler['verb'],
                 handler['path'],
                 handler['handler']
+            )
+
+    def get_subroute(self, request, uri, headers):
+        uri_parts = uri.split('/')
+        if uri_parts[-1] == 'detail':
+            return self.handle_retrieve_volumes_detailed(
+                request, uri, headers
+            )
+        else:
+            return self.handle_retrieve_volume_details(
+                request, uri, headers
             )
 
     def handle_create_volume(self, request, uri, headers):
@@ -105,7 +116,7 @@ class CinderV1Volumes(base.CinderV1ServiceBase):
 
         # volume id in the URI, nothing in the body
         result = self.SPECIFIC_VOLUME.match(uri)
-        if result:
+        if result and not uri.split('/')[-1].startswith('_'):
             volume_id = result.group(0)
 
             # TODO: Mapping Tenant-ID in URL per OpenStack API norms
@@ -143,4 +154,4 @@ class CinderV1Volumes(base.CinderV1ServiceBase):
             return (200, headers, json.dumps(response_body))
 
         else:
-            return (400, headers, ['Invalid client request'])
+            return (400, headers, 'Invalid client request')

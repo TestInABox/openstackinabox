@@ -1,9 +1,8 @@
 """
 """
-import json
 import unittest
 
-import mock
+import ddt
 import requests
 import stackinabox.util.requests_mock.core
 from stackinabox.stack import StackInABox
@@ -12,6 +11,7 @@ from openstackinabox.services.cinder import CinderV1Service
 from openstackinabox.services.keystone import KeystoneV2Service
 
 
+@ddt.ddt
 class TestCinderV1Retrieve(unittest.TestCase):
 
     def setUp(self):
@@ -28,12 +28,54 @@ class TestCinderV1Retrieve(unittest.TestCase):
         super(TestCinderV1Retrieve, self).tearDown()
         StackInABox.reset_services()
 
-    def test_volume_retrieve(self):
+    @ddt.data(
+        ('POST', 'http://localhost/cinder/v1/volumes'),
+        ('GET', 'http://localhost/cinder/v1/volumes'),
+        ('GET', 'http://localhost/cinder/v1/volumes/detail'),
+        ('PUT', 'http://localhost/cinder/v1/volumes/12348789'),
+        ('DELETE', 'http://localhost/cinder/v1/volumes/12348789'),
+    )
+    @ddt.unpack
+    def test_volume_not_implemented(self, verb, url):
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
+                'localhost'
+            )
+            res = requests.request(
+                verb,
+                url,
+                headers=self.headers
+            )
+            self.assertEqual(res.status_code, 500)
+
+    def test_volume_specific_detailed_no_token(self):
         with stackinabox.util.requests_mock.core.activate():
             stackinabox.util.requests_mock.core.requests_mock_registration(
                 'localhost'
             )
             res = requests.get(
-                'http://localhost/cinder/v1/volumes/detail'
+                'http://localhost/cinder/v1/volumes/12348789',
             )
-            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.status_code, 403)
+
+    def test_volume_specific_detailed_bad_volume_id(self):
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
+                'localhost'
+            )
+            res = requests.get(
+                'http://localhost/cinder/v1/volumes/_12348789',
+                headers=self.headers
+            )
+            self.assertEqual(res.status_code, 400)
+
+    def test_volume_specific_detailed(self):
+        with stackinabox.util.requests_mock.core.activate():
+            stackinabox.util.requests_mock.core.requests_mock_registration(
+                'localhost'
+            )
+            res = requests.get(
+                'http://localhost/cinder/v1/volumes/12348789',
+                headers=self.headers
+            )
+            self.assertEqual(res.status_code, 200)
