@@ -1,10 +1,11 @@
-import shutil
 import tempfile
 
-import six
 
+try:
+    from tempfile import TemporaryDirectory
 
-if six.PY2:
+except ImportError:
+    import shutil
 
     class TemporaryDirectory(object):
 
@@ -29,7 +30,3 @@ if six.PY2:
 
         def cleanup(self):
             shutil.rmtree(self.name)
-
-elif six.PY3:
-
-    from tempfile import TemporaryDirectory

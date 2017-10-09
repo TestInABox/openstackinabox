@@ -17,10 +17,10 @@ import uuid
 
 import six
 from stackinabox.services.service import StackInABoxService
-from stackinabox.utils import CaseInsensitiveDict
+from stackinabox.util.tools import CaseInsensitiveDict
 
 from openstackinabox.services import base_service
-from openstackinabox.util.directory import TemporaryDirectory
+from openstackinabox.utils.directory import TemporaryDirectory
 
 
 schema = [
