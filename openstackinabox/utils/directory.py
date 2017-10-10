@@ -1,32 +1,33 @@
+"""
+Py2 TemporaryDirectory support
+"""
+import shutil
+import six
 import tempfile
 
+class TemporaryDirectory(object):
 
-try:
-    from tempfile import TemporaryDirectory
+    def __init__(self, suffix='', prefix='tmp', dir=None):
+        self.__temp_dir = tempfile.mkdtemp(suffix, prefix, dir)
 
-except ImportError:
-    import shutil
+    def __enter__(self):
+        return self
 
-    class TemporaryDirectory(object):
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.cleanup()
 
-        def __init__(self, suffix='', prefix='tmp', dir=None):
-            self.__temp_dir = tempfile.mkdtemp(suffix, prefix, dir)
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, exc_type, exc_value, traceback):
+    def __del__(self):
+        try:
             self.cleanup()
-
-        def __del__(self):
-            self.cleanup()
-
-        def __repr__(self):
+        except OSError:
             pass
 
-        @property
-        def name(self):
-            return self.__temp_dir
+    def __repr__(self):
+        return 'TemporaryDirectory({0})'.format(self.name)
 
-        def cleanup(self):
-            shutil.rmtree(self.name)
+    @property
+    def name(self):
+        return self.__temp_dir
+
+    def cleanup(self):
+        shutil.rmtree(self.name)
