@@ -13,7 +13,7 @@ from stackinabox.util.tools import CaseInsensitiveDict
 from openstackinabox.services import base_service
 
 from openstackinabox.models.swift.model import SwiftServiceModel
-from openstackinabox.services.swift.storage import SwiftStorage
+from openstackinabox.models.swift.storage import SwiftStorage
 
 
 LOG = logging.getLogger(__name__)

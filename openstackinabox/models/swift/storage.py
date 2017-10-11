@@ -20,10 +20,29 @@ LOG = logging.getLogger(__name__)
 
 class SwiftStorage(object):
 
+    @staticmethod
+    def get_etag(data):
+        etag_generator = hashlib.md5()
+        for d in data:
+            etag_generator.update(d)
+
+        return etag_generator.hexdigest()
+
+    @staticmethod
+    def get_file_etag(file_name):
+        etag_generator = hashlib.md5()
+        with open(file_name, 'rb') as input_data:
+            for chunk in input_data:
+                etag_generator.update(chunk)
+
+        return etag_generator.hexdigest()
+
     def __init__(self, service_id, model):
         self.__id = service_id
         self.__model = model
         self.__storage = TemporaryDirectory()
+        self.__metadata_information = {}
+        self.__custom_metadata = {}
 
     @property
     def model(self):
@@ -34,8 +53,20 @@ class SwiftStorage(object):
         self.__model = value
 
     @property
+    def storage(self):
+        return self.__storage
+
+    @property
     def location(self):
-        return self.__storage.name
+        return self.storage.name
+
+    @property
+    def metadata(self):
+        return self.__metadata_information
+
+    @property
+    def custom_metadata(self):
+        return self.__custom_metadata
 
     def get_tenant_path(self, tenantid):
         return '{0}/{1}'.format(self.location, tenantid)
@@ -47,54 +78,39 @@ class SwiftStorage(object):
         )
 
     def get_object_path(self, tenantid, container_name, object_name):
-        if self.has_object(tenantid, container_name, object_name):
-            try:
-                intTenantId = self.model.has_tenant(tenantid)
-                intContainerId = self.model.has_container(
-                    intTenantId,
-                    container_name
-                )
-                intObjectId = self.model.has_object(
-                    intTenantId,
-                    intContainerId,
-                    object_name
-                )
-                object_info = self.model.get_object(
-                    intTenantId,
-                    intContainerId,
-                    intObjectId
-                )
-
-                return object_info['path']
-
-            except Exception:
-                LOG.exception(
-                    'Swift Service ({0}): Failed to retrieved path for Object '
-                    '{3} in Container {2} for Tenant {1}'.format(
-                        self.__id, tenantid, container_name, object_name
-                    )
-                )
-
-        else:
-            return '{0}/{1}'.format(
-                self.get_container_path(tenantid, container_name),
-                uuid.uuid4()
+        try:
+            intTenantId = self.model.has_tenant(tenantid)
+            intContainerId = self.model.has_container(
+                intTenantId,
+                container_name
             )
 
-    def get_etag(self, data):
-        etag_generator = hashlib.md5()
-        for d in data:
-            etag_generator.update(d)
+            intObjectId = self.model.has_object(
+                intTenantId,
+                intContainerId,
+                object_name
+            )
 
-        return etag_generator.hexdigest().upper()
+            object_info = self.model.get_object(
+                intTenantId,
+                intContainerId,
+                intObjectId
+            )
 
-    def get_file_etag(self, file_name):
-        etag_generator = hashlib.md5()
-        with open(file_name, 'rb') as input_data:
-            for chunk in input_data:
-                etag_generator.update(chunk)
+            return object_info['path']
 
-        return etag_generator.hexdigest().upper()
+        except (
+            exceptions.SwiftUnknownTenantError,
+            exceptions.SwiftUnknownContainerError,
+            exceptions.SwiftUnknownObjectError
+        ):
+            LOG.exception(
+                'Swift Service ({0}): Failed to retrieved path for Object '
+                '{3} in Container {2} for Tenant {1}'.format(
+                    self.__id, tenantid, container_name, object_name
+                )
+            )
+            raise
 
     def add_tenant(self, tenantid):
         LOG.debug(
@@ -103,8 +119,12 @@ class SwiftStorage(object):
             )
         )
 
+        path = None
         try:
             intTenantId = self.model.has_tenant(tenantid)
+
+            tenant_data = self.model.get_tenant(intTenantId)
+            path = tenant_data['path']
 
         except exceptions.SwiftUnknownTenantError:
             path = self.get_tenant_path(tenantid)
@@ -275,14 +295,17 @@ class SwiftStorage(object):
                 self.__id, tenantid, container_name, object_name
             )
         )
+
+        actual_file_size = (
+            file_size
+            if file_size
+            else os.path.getsize(file_name)
+        )
+
         metadata = CaseInsensitiveDict()
         metadata.update(
             {
-                'content-length': (
-                    str(file_size)
-                    if file_size
-                    else str(os.path.getsize(file_name))
-                ),
+                'content-length': str(actual_file_size),
                 'content-type': 'application/binary',
                 'etag': self.get_file_etag(file_name)
             }
@@ -290,7 +313,7 @@ class SwiftStorage(object):
         with open(file_name, 'rb') as content:
             self.store_object(
                 tenantid, container_name, object_name, content,
-                metadata, file_size, allow_file_size_mismatch
+                metadata, actual_file_size, allow_file_size_mismatch
             )
 
     def load_object(
@@ -313,27 +336,29 @@ class SwiftStorage(object):
             )
         )
 
+        actual_file_size = (
+            file_size
+            if file_size
+            else len(content)
+        )
+
         metadata = CaseInsensitiveDict()
         metadata.update({
-            'content-length': (
-                str(file_size)
-                if file_size
-                else str(len(content))
-            ),
+            'content-length': str(actual_file_size),
             'content-type': 'application/binary',
             'etag': self.get_etag(content)
         })
         self.store_object(
             tenantid, container_name, object_name, content, metadata,
-            file_size, allow_file_size_mismatch
+            actual_file_size, allow_file_size_mismatch
         )
 
     def update_object_etag(
         self, tenantid, container_name, object_name, new_etag
     ):
-        path = self.__get_object_path(tenantid, container_name, object_name)
-        if path in self.__metadata_information:
-            self.__metadata_information[path]['etag'] = new_etag
+        path = self.get_object_path(tenantid, container_name, object_name)
+        if path in self.metadata:
+            self.metadata[path]['etag'] = new_etag
 
     def store_or_update_custom_metadata(
         self, tenantid, container_name, object_name, metadata
@@ -344,28 +369,28 @@ class SwiftStorage(object):
             )
         )
         path = self.get_object_path(tenantid, container_name, object_name)
-        if path in self.__custom_metadata:
+        if path in self.custom_metadata:
             LOG.debug(
                 'Swift Service ({0}): Updating existing custom metadata {1} '
                 'with {2}'.format(
                     self.__id,
-                    self.__custom_metadata[path],
+                    self.custom_metadata[path],
                     metadata
                 )
             )
-            self.__custom_metadata[path].update(metadata)
+            self.custom_metadata[path].update(metadata)
             LOG.debug(
                 'Swift Service ({0}): updated existing custom metadata '
                 '{1}'.format(
-                    self.__id, self.__custom_metadata[path]
+                    self.__id, self.custom_metadata[path]
                 )
             )
         else:
             LOG.debug('Swift Service ({0}): no existing custom metadata')
-            self.__custom_metadata[path] = metadata
+            self.custom_metadata[path] = metadata
             LOG.debug(
                 'Swift Service ({0}): saved custom metadata {1}'.format(
-                    self.__id, self.__custom_metadata[path]
+                    self.__id, self.custom_metadata[path]
                 )
             )
 
@@ -373,33 +398,48 @@ class SwiftStorage(object):
         custom_metadata = CaseInsensitiveDict()
 
         path = self.get_object_path(tenantid, container_name, object_name)
-        if path in self.__custom_metadata:
-            custom_metadata.update(self.__custom_metadata[path])
+        if path in self.custom_metadata:
+            custom_metadata.update(self.custom_metadata[path])
 
         return custom_metadata
 
     def remove_custom_metadata(self, tenantid, container_name, object_name):
-        path = self.__get_object_path(tenantid, container_name, object_name)
-        if path in self.__custom_metadata:
-            del self.__custom_metadata[path]
+        path = self.get_object_path(tenantid, container_name, object_name)
+        if path in self.custom_metadata:
+            del self.custom_metadata[path]
 
     def store_object(
         self, tenantid, container_name, object_name, content, metadata,
         file_size=None, allow_file_size_mismatch=False
     ):
-        if not self.has_container(tenantid, container_name):
-            intTenantId, intContainerId = self.add_container(
-                tenantid,
-                container_name
-            )
-
-        else:
+        path = None
+        if self.has_container(tenantid, container_name):
             intTenantId, intContainerId = self.get_container(
                 tenantid,
                 container_name
             )
 
-        path = self.get_object_path(tenantid, container_name, object_name)
+        else:
+            intTenantId, intContainerId = self.add_container(
+                tenantid,
+                container_name
+            )
+
+        try:
+            path = self.get_object_path(tenantid, container_name, object_name)
+
+        except (
+            exceptions.SwiftUnknownTenantError,
+            exceptions.SwiftUnknownContainerError,
+            exceptions.SwiftUnknownObjectError
+        ):
+
+            # no way it can already have the object...
+            path = '{0}/{1}'.format(
+                self.get_container_path(tenantid, container_name),
+                object_name
+            )
+
         LOG.debug(
             'Swift Service ({0}): Using path {1} for object '
             '{2}/{3}:{4}'.format(
@@ -476,17 +516,19 @@ class SwiftStorage(object):
                     self.__id, k, v
                 )
             )
-        self.__metadata_information[path] = metadata
+        self.metadata[path] = metadata
         LOG.debug('Swift Service ({0}): Metadata stored'.format(self.__id))
 
     def retrieve_object(self, tenantid, container_name, object_name):
         if self.has_object(tenantid, container_name, object_name):
             metadata = CaseInsensitiveDict()
-            path = self.__get_object_path(tenantid,
-                                          container_name,
-                                          object_name)
-            if path in self.__metadata_information:
-                metadata.update(self.__metadata_information[path])
+            path = self.get_object_path(
+                tenantid,
+                container_name,
+                object_name
+            )
+            if path in self.metadata:
+                metadata.update(self.metadata[path])
 
             custom_metadata = self.retrieve_custom_metadata(
                 tenantid, container_name, object_name
@@ -506,11 +548,12 @@ class SwiftStorage(object):
                 )
             )
 
-            LOG.debug(
-                'Swift Service ({0}): Metadata data length - {1}'.format(
-                    self.__id, metadata['content-length']
+            if 'content-length' in metadata:
+                LOG.debug(
+                    'Swift Service ({0}): Metadata data length - {1}'.format(
+                        self.__id, metadata['content-length']
+                    )
                 )
-            )
 
             data = None
             try:
