@@ -101,19 +101,25 @@ SQL_REMOVE_DELETE = '''
 
 class SwiftServiceModel(base_model.BaseModel):
 
-    def __init__(self):
-        super(SwiftServiceModel, self).__init__('SwiftModel')
-        self.__db = sqlite3.connect(':memory:')
-        self.__init_database()
-
-    def __init_database(self):
-        cursor = self.__db.cursor()
+    @staticmethod
+    def initialize_db_schema(db_instance):
+        cursor = db_instance.cursor()
         for table_sql in schema:
             cursor.execute(table_sql)
-        self.__db.commit()
+        db_instance.commit()
+
+    def __init__(self, initialize=True):
+        super(SwiftServiceModel, self).__init__('SwiftModel')
+        self.__db = sqlite3.connect(':memory:')
+        if initialize:
+            self.initialize_db_schema(self.database)
+
+    @property
+    def database(self):
+        return self.__db
 
     def has_tenant(self, tenantid):
-        cursor = self.__db.cursor()
+        cursor = self.database.cursor()
         args = {
             'tenantid': tenantid
         }
@@ -127,18 +133,18 @@ class SwiftServiceModel(base_model.BaseModel):
         return result[0]
 
     def add_tenant(self, tenantid, path):
-        cursor = self.__db.cursor()
+        cursor = self.database.cursor()
         args = {
             'tenantid': tenantid,
             'path': path
         }
         cursor.execute(SQL_INSERT_TENANT, args)
-        self.__db.commit()
+        self.database.commit()
 
         return self.has_tenant(tenantid)
 
     def get_tenant(self, internal_tenant_id):
-        cursor = self.__db.cursor()
+        cursor = self.database.cursor()
         args = {
             'id': internal_tenant_id
         }
@@ -158,7 +164,7 @@ class SwiftServiceModel(base_model.BaseModel):
         }
 
     def has_container(self, internal_tenant_id, container_name):
-        cursor = self.__db.cursor()
+        cursor = self.database.cursor()
         args = {
             'tenantid': internal_tenant_id,
             'container_name': container_name
@@ -173,19 +179,19 @@ class SwiftServiceModel(base_model.BaseModel):
         return result[0]
 
     def add_container(self, internal_tenant_id, container_name, path):
-        cursor = self.__db.cursor()
+        cursor = self.database.cursor()
         args = {
             'tenantid': internal_tenant_id,
             'container_name': container_name,
             'path': path
         }
         cursor.execute(SQL_INSERT_CONTAINER, args)
-        self.__db.commit()
+        self.database.commit()
 
         return self.has_container(internal_tenant_id, container_name)
 
     def get_container(self, internal_tenant_id, internal_container_id):
-        cursor = self.__db.cursor()
+        cursor = self.database.cursor()
         args = {
             'tenantid': internal_tenant_id,
             'containerid': internal_container_id
@@ -209,7 +215,7 @@ class SwiftServiceModel(base_model.BaseModel):
 
     def has_object(self, internal_tenant_id, internal_container_id,
                    object_name):
-        cursor = self.__db.cursor()
+        cursor = self.database.cursor()
         args = {
             'tenantid': internal_tenant_id,
             'containerid': internal_container_id,
@@ -229,7 +235,7 @@ class SwiftServiceModel(base_model.BaseModel):
 
     def add_object(self, internal_tenant_id, internal_container_id,
                    object_name, path):
-        cursor = self.__db.cursor()
+        cursor = self.database.cursor()
         args = {
             'tenantid': internal_tenant_id,
             'containerid': internal_container_id,
@@ -237,7 +243,7 @@ class SwiftServiceModel(base_model.BaseModel):
             'path': path
         }
         cursor.execute(SQL_INSERT_OBJECT, args)
-        self.__db.commit()
+        self.database.commit()
 
         return self.has_object(internal_tenant_id,
                                internal_container_id,
@@ -246,7 +252,7 @@ class SwiftServiceModel(base_model.BaseModel):
     def get_object(
         self, internal_tenant_id, internal_container_id, internal_object_id
     ):
-        cursor = self.__db.cursor()
+        cursor = self.database.cursor()
         args = {
             'tenantid': internal_tenant_id,
             'containerid': internal_container_id,
@@ -275,11 +281,11 @@ class SwiftServiceModel(base_model.BaseModel):
 
     def remove_object(self, internal_tenant_id, internal_container_id,
                       internal_object_id):
-        cursor = self.__db.cursor()
+        cursor = self.database.cursor()
         args = {
             'tenantid': internal_tenant_id,
             'containerid': internal_container_id,
             'objectid': internal_object_id,
         }
         cursor.execute(SQL_REMOVE_DELETE, args)
-        self.__db.commit()
+        self.database.commit()
