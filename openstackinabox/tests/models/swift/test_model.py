@@ -2,7 +2,6 @@ import sqlite3
 
 import ddt
 import mock
-import six
 
 from openstackinabox.tests.base import TestBase
 
@@ -55,7 +54,6 @@ class TestSwiftModel(TestBase):
     def test_initialize(self, auto_initialize):
         instance = model.SwiftServiceModel(initialize=auto_initialize)
 
-
         if not auto_initialize:
             # error raised if we try to put anything into the database
             with self.assertRaises(sqlite3.OperationalError):
@@ -73,7 +71,7 @@ class TestSwiftModel(TestBase):
                 self.container_path
             )
 
-            internal_object_id = instance.add_object(
+            instance.add_object(
                 internal_tenant_id,
                 internal_container_id,
                 self.object_name,
@@ -108,7 +106,7 @@ class TestSwiftModel(TestBase):
     )
     def test_tenant_failure(self, method):
         instance = model.SwiftServiceModel()
-       
+
         with self.assertRaises(exceptions.SwiftUnknownTenantError):
             if method == 'has':
                 instance.has_tenant(self.tenant_id)
@@ -117,7 +115,7 @@ class TestSwiftModel(TestBase):
 
     def test_tenant_success(self):
         instance = model.SwiftServiceModel()
-       
+
         internal_tenant_id = instance.add_tenant(
             self.tenant_id,
             self.tenant_path

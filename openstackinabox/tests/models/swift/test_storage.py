@@ -2,13 +2,11 @@ import copy
 import hashlib
 import os
 import os.path
-import sqlite3
 import tempfile
 import uuid
 
 import ddt
 import mock
-import six
 from stackinabox.util.tools import CaseInsensitiveDict
 
 from openstackinabox.tests.base import TestBase
@@ -52,6 +50,7 @@ class TestSwiftStorageEtag(TestBase):
             storage.SwiftStorage.get_file_etag(local_file.name),
             expected_etag
         )
+
 
 class TestSwiftStorageBase(TestBase):
 
@@ -472,7 +471,7 @@ class TestSwiftStorageObject(TestSwiftStorageBase):
                 if has_container
                 else '{0}_{1}'.format(
                     self.container_name,
-                    str(uuid.uuid4()).replace('-','')
+                    str(uuid.uuid4()).replace('-', '')
                 )
             )
             object_name = str(uuid.uuid4())
@@ -547,7 +546,7 @@ class TestSwiftStorageObject(TestSwiftStorageBase):
                 if has_container
                 else '{0}_{1}'.format(
                     self.container_name,
-                    str(uuid.uuid4()).replace('-','')
+                    str(uuid.uuid4()).replace('-', '')
                 )
             )
             object_name = str(uuid.uuid4())
@@ -559,7 +558,9 @@ class TestSwiftStorageObject(TestSwiftStorageBase):
                 expected_data = data_input.read()
 
                 expected_file_size = os.path.getsize(object_data_file.name)
-                expected_etag = self.instance.get_file_etag(object_data_file.name)
+                expected_etag = self.instance.get_file_etag(
+                    object_data_file.name
+                )
                 expected_metadata = CaseInsensitiveDict()
                 expected_metadata.update(
                     {
@@ -640,7 +641,9 @@ class TestSwiftStorageObject(TestSwiftStorageBase):
         )
 
         if has_path:
-            stored_etag_value = self.instance.metadata[self.object_path]['etag']
+            stored_etag_value = (
+                self.instance.metadata[self.object_path]['etag']
+            )
             self.assertEqual(
                 stored_etag_value,
                 new_etag_value
@@ -663,9 +666,6 @@ class TestSwiftStorageObject(TestSwiftStorageBase):
             self.internal_container_id,
             self.object_name,
             self.object_path
-        )
-        original_data_etag = self.instance.get_file_etag(
-            object_data_file.name
         )
         initial_metadata = {
             'master': 'database'
@@ -796,7 +796,7 @@ class TestSwiftStorageObject(TestSwiftStorageBase):
             self.object_name,
             content,
             metadata,
-            file_size = (
+            file_size=(
                 len(content)
                 if has_file_size
                 else None
@@ -849,7 +849,7 @@ class TestSwiftStorageObject(TestSwiftStorageBase):
                     self.object_name,
                     content,
                     metadata,
-                    file_size = len(content),
+                    file_size=len(content),
                     allow_file_size_mismatch=allow_file_size_mismatch
                 )
         else:
@@ -859,7 +859,7 @@ class TestSwiftStorageObject(TestSwiftStorageBase):
                 self.object_name,
                 content,
                 metadata,
-                file_size = len(content),
+                file_size=len(content),
                 allow_file_size_mismatch=allow_file_size_mismatch
             )
 

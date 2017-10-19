@@ -2,8 +2,8 @@
 Py2 TemporaryDirectory support
 """
 import shutil
-import six
 import tempfile
+
 
 class TemporaryDirectory(object):
 

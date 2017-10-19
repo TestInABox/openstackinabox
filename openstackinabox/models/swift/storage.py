@@ -5,7 +5,6 @@ import io
 import logging
 import os
 import os.path
-import uuid
 
 import six
 from stackinabox.util.tools import CaseInsensitiveDict

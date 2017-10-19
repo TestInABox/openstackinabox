@@ -1,10 +1,7 @@
 import os
 import os.path
-import unittest
 
 import ddt
-import mock
-import six
 
 from openstackinabox.tests.base import TestBase
 
