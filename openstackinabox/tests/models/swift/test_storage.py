@@ -826,6 +826,51 @@ class TestSwiftStorageObject(TestSwiftStorageBase):
             expected_metadata
         )
 
+    def test_store_object_zero_length(self):
+
+        # 2kb of random data
+        content = ''
+
+        metadata = {
+            'x-tenant-id': self.tenant_id,
+            'x-container': self.container_name,
+            'x-object': self.object_name,
+            'content-length': len(content)
+        }
+
+        self.instance.store_object(
+            self.tenant_id,
+            self.container_name,
+            self.object_name,
+            content,
+            metadata,
+            file_size=len(content),
+            allow_file_size_mismatch=False
+        )
+
+        object_on_disk_path = self.instance.get_object_path(
+            self.tenant_id,
+            self.container_name,
+            self.object_name
+        )
+
+        with open(object_on_disk_path, 'r') as object_on_disk:
+            data_on_disk = object_on_disk.read()
+            self.assertEqual(
+                data_on_disk,
+                content
+            )
+
+        self.assertIn(object_on_disk_path, self.instance.metadata)
+
+        expected_metadata = copy.deepcopy(metadata)
+        expected_metadata['x-y-object-disk-path'] = object_on_disk_path
+        self.assertEqual(
+            self.instance.metadata[object_on_disk_path],
+            expected_metadata
+
+        )
+
     @ddt.data(
         False,
         True

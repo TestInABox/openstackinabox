@@ -455,8 +455,9 @@ class SwiftStorage(object):
         )
 
         with open(path, 'wb') as object_file:
-            for c in content:
-                object_file.write(c)
+            if content:
+                for c in content:
+                    object_file.write(c)
 
             object_file.flush()
 

@@ -21,9 +21,13 @@ LOG = logging.getLogger(__name__)
 
 class SwiftV1Service(base_service.BaseService):
 
-    # URL_REGEX = re.compile('\A\/(.+)\/(.+)\/(.+)\Z')
-    word_match = '([\.%~#@!&\^\*\(\)\+=\`\'":;><?\w-]+)'
-    URL_REGEX = re.compile('\A\/{0}\/{0}\/(.+\Z)'.format(word_match))
+    # Match: /<tenant-id>[/object/prefix]/<object>
+    #   <tenant-id> = (\/\w+)
+    #   [/object/prefix] = (\/[[\.%~#@!&\^\*\(\)\+=\`\'\":;><?\w-]+)+
+    #   <object> = (\/.+\Z)
+    URL_REGEX = re.compile(
+        '\A(\/\w+)(\/[[\.%~#@!&\^\*\(\)\+=\`\'\":;><?\w-]+)+(\/.+\Z)'
+    )
 
     @staticmethod
     def split_uri(uri):
@@ -47,7 +51,16 @@ class SwiftV1Service(base_service.BaseService):
                     'SwiftV1Service: Split URL - group: {0}'.format(dg)
                 )
 
-            return (data_groups[0], data_groups[1], data_groups[2])
+            tenant_id = data_groups[0]
+            object_name = data_groups[2]
+
+            container = uri[len(tenant_id)+1:-(len(object_name))]
+
+            return (
+                tenant_id[1:],
+                container,
+                object_name[1:]
+            )
 
         LOG.debug('Swift Service: Failed to split url')
         return (None, None, None)
@@ -72,11 +85,15 @@ class SwiftV1Service(base_service.BaseService):
         super(SwiftV1Service, self).__init__('swift/v1.0')
         self.__id = uuid.uuid4()
         self.__model = SwiftServiceModel()
-        self.__storage = SwiftStorage(self.__id, self.__model)
+        self.__storage = SwiftStorage(self.__id, self.model)
         self.__metadata_information = {}
         self.__custom_metadata = {}
         self.fail_auth = False
         self.fail_error_code = None
+
+    @property
+    def model(self):
+        return self.__model
 
     @property
     def storage(self):
@@ -122,6 +139,7 @@ class SwiftV1Service(base_service.BaseService):
         )
 
         self.add_transaction(headers)
+
         LOG.debug(
             'Swift Service ({0}): Added transaction data to headers'.format(
                 self.__id
@@ -132,7 +150,7 @@ class SwiftV1Service(base_service.BaseService):
             return (401, headers, 'Unauthorized')
 
         elif self.fail_error_code is not None:
-            return (self, self.fail_error_code, headers, 'mock error')
+            return (self.fail_error_code, headers, 'mock error')
 
         tenantid, container_name, object_name = SwiftV1Service.split_uri(uri)
         LOG.debug(
@@ -141,24 +159,14 @@ class SwiftV1Service(base_service.BaseService):
             )
         )
 
-        try:
-            data, metadata = self.storage.retrieve_object(
-                tenantid,
-                container_name,
-                object_name
-            )
-            LOG.debug(
-                'Swift Service ({0}): Retrieved object'.format(self.__id)
-            )
-
-        except Exception as ex:
-            LOG.exception(
-                'Swift Service ({0}): Error while retrieving object'.format(
-                    self.__id
-                )
-            )
-            data = None
-            metadata = None
+        data, metadata = self.storage.retrieve_object(
+            tenantid,
+            container_name,
+            object_name
+        )
+        LOG.debug(
+            'Swift Service ({0}): Retrieved object'.format(self.__id)
+        )
 
         if metadata is not None:
             LOG.debug(
@@ -240,7 +248,7 @@ class SwiftV1Service(base_service.BaseService):
             self.fail_error_code is not None and
             self.fail_error_code not in range(200, 299)
         ):
-            return (self, self.fail_error_code, headers, 'mock error')
+            return (self.fail_error_code, headers, 'mock error')
 
         tenantid, container_name, object_name = SwiftV1Service.split_uri(uri)
         LOG.debug(
@@ -281,7 +289,7 @@ class SwiftV1Service(base_service.BaseService):
             'relevant return headers as metadata'.format(self.__id)
         )
         metadata = CaseInsensitiveDict()
-        for k, v in request.headers.items():
+        for k, v in six.iteritems(request.headers):
             if k.lower() not in metadata_headers:
                 metadata[k] = v
 
@@ -366,7 +374,7 @@ class SwiftV1Service(base_service.BaseService):
             return (401, headers, 'Unauthorized')
 
         elif self.fail_error_code is not None:
-            return (self, self.fail_error_code, headers, 'mock error')
+            return (self.fail_error_code, headers, 'mock error')
 
         tenantid, container_name, object_name = SwiftV1Service.split_uri(uri)
         LOG.debug(
@@ -375,26 +383,16 @@ class SwiftV1Service(base_service.BaseService):
             )
         )
 
-        try:
-            chunker, metadata = self.storage.retrieve_object(
-                tenantid,
-                container_name,
-                object_name
-            )
-            LOG.debug(
-                'Swift Service ({0}): Retrieved object'.format(self.__id)
-            )
+        data, metadata = self.storage.retrieve_object(
+            tenantid,
+            container_name,
+            object_name
+        )
+        LOG.debug(
+            'Swift Service ({0}): Retrieved object'.format(self.__id)
+        )
 
-        except Exception as ex:
-            LOG.exception(
-                'Swift Service ({0}): Error retrieving object'.format(
-                    self.__id
-                )
-            )
-            chunker = None,
-            metadata = {}
-
-        if chunker is None:
+        if data is None:
             LOG.debug(
                 'Swift Service ({0}): Did not find the object'.format(
                     self.__id
@@ -415,28 +413,6 @@ class SwiftV1Service(base_service.BaseService):
                 )
 
             headers.update(metadata)
-            try:
-                custom_metadata = self.retrieve_custom_metadata(
-                    tenantid,
-                    container_name,
-                    object_name
-                )
-                for k, v in six.iteritems(custom_metadata):
-                    LOG.debug(
-                        'Swift Service ({0}): Custom Metadata[{1}] = {2} '
-                        'with type {3}'.format(
-                            self.__id, k, v, type(v)
-                        )
-                    )
-
-                headers.update(custom_metadata)
-            except:
-                LOG.exception(
-                    'Swift Service ({0}): Error retrieving custom '
-                    'metadata'.format(
-                        self.__id
-                    )
-                )
 
             return (204, headers, None)
 
@@ -458,7 +434,7 @@ class SwiftV1Service(base_service.BaseService):
             return (401, headers, 'Unauthorized')
 
         elif self.fail_error_code is not None:
-            return (self, self.fail_error_code, headers, 'mock error')
+            return (self.fail_error_code, headers, 'mock error')
 
         tenantid, container_name, object_name = SwiftV1Service.split_uri(uri)
         LOG.debug(
@@ -467,25 +443,16 @@ class SwiftV1Service(base_service.BaseService):
             )
         )
 
-        try:
-            chunker, metadata = self.storage.retrieve_object(
-                tenantid,
-                container_name,
-                object_name
-            )
-            LOG.debug(
-                'Swift Service ({0}): Retrieved object'.format(self.__id)
-            )
+        data, metadata = self.storage.retrieve_object(
+            tenantid,
+            container_name,
+            object_name
+        )
+        LOG.debug(
+            'Swift Service ({0}): Retrieved object'.format(self.__id)
+        )
 
-        except Exception as ex:
-            LOG.exception(
-                'Swift Service ({0}): Error retrieving object'.format(
-                    self.__id
-                )
-            )
-            chunker = None,
-
-        if chunker is None:
+        if data is None:
             LOG.debug(
                 'Swift Service ({0}): Did not find the object'.format(
                     self.__id
@@ -499,9 +466,12 @@ class SwiftV1Service(base_service.BaseService):
             )
 
             try:
-                self.remove_custom_metadata(tenantid,
-                                            container_name,
-                                            object_name)
+                self.storage.remove_custom_metadata(
+                    tenantid,
+                    container_name,
+                    object_name
+                )
+
                 LOG.debug(
                     'Swift Service ({0}): Removed custom metadata'.format(
                         self.__id
