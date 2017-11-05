@@ -2,6 +2,7 @@ import os
 import os.path
 
 import ddt
+import mock
 
 from openstackinabox.tests.base import TestBase
 
@@ -42,6 +43,15 @@ class TestTempDirectory(TestBase):
 
         for name in file_names:
             self.assertFalse(os.path.exists(name))
+
+    def test_del_cleanup_error(self):
+        with mock.patch(
+            'shutil.rmtree'
+        ) as mock_rmtree:
+            mock_rmtree.side_effect = OSError('mock error')
+
+            temp_dir = directory.TemporaryDirectory()
+            temp_dir.cleanup()
 
     def test_context(self):
         temp_dir_name = None

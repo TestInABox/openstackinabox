@@ -17,10 +17,7 @@ class TemporaryDirectory(object):
         self.cleanup()
 
     def __del__(self):
-        try:
-            self.cleanup()
-        except OSError:
-            pass
+        self.cleanup()
 
     def __repr__(self):
         return 'TemporaryDirectory({0})'.format(self.name)
@@ -30,4 +27,7 @@ class TemporaryDirectory(object):
         return self.__temp_dir
 
     def cleanup(self):
-        shutil.rmtree(self.name)
+        try:
+            shutil.rmtree(self.name)
+        except OSError:
+            pass
