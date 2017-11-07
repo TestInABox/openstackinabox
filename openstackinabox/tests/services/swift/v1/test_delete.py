@@ -6,6 +6,7 @@ import unittest
 
 import mock
 import requests
+import six
 import stackinabox.util.requests_mock.core
 from stackinabox.stack import StackInABox
 
@@ -181,10 +182,10 @@ class TestSwiftV1ObjectHead(unittest.TestCase):
 
     def test_internal_error(self):
         with mock.patch(
-            'openstackinabox.models.swift.storage.SwiftStorage.remove_custom_metadata'
+            'openstackinabox.models.swift.storage.SwiftStorage.'
+            'remove_custom_metadata'
         ) as mock_storage_remove:
             mock_storage_remove.side_effect = Exception('Mock Error')
-
 
             object_size = 1024
             object_data = os.urandom(object_size)
@@ -212,4 +213,9 @@ class TestSwiftV1ObjectHead(unittest.TestCase):
                 )
                 self.assertEqual(res.status_code, 500)
                 content = res.content
-                self.assertEqual(content, 'Internal Server Error')
+                self.assertEqual(
+                    content,
+                    'Internal Server Error'
+                    if six.PY2
+                    else b'Internal Server Error'
+                )

@@ -2,7 +2,6 @@
 Stack-In-A-Box: Basic Test
 """
 import hashlib
-import os
 import unittest
 
 import ddt

@@ -35,7 +35,7 @@ class TestTempDirectory(TestBase):
                 x
             )
             with open(filename, 'w') as data_output:
-                data_output.write(os.urandom(8192))
+                data_output.write(str(os.urandom(8192)))
 
             file_names.append(filename)
 

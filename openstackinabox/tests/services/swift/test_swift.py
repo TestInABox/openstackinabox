@@ -96,7 +96,7 @@ class TestHttprettySwift(unittest.TestCase):
         expected_container = None
         if container_count:
             expected_container = uri[
-                (len(expected_tenant_id)+2):-(len(expected_object_name)+1)
+                (len(expected_tenant_id) + 2):-(len(expected_object_name) + 1)
             ]
 
         uri_data = SwiftV1Service.split_uri(uri)

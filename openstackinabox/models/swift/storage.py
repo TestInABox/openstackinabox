@@ -22,8 +22,7 @@ class SwiftStorage(object):
     @staticmethod
     def get_etag(data):
         etag_generator = hashlib.md5()
-        for d in data:
-            etag_generator.update(d)
+        etag_generator.update(data)
 
         return etag_generator.hexdigest()
 
@@ -456,8 +455,7 @@ class SwiftStorage(object):
 
         with open(path, 'wb') as object_file:
             if content:
-                for c in content:
-                    object_file.write(c)
+                object_file.write(content)
 
             object_file.flush()
 

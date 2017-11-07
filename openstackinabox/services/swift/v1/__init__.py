@@ -54,7 +54,7 @@ class SwiftV1Service(base_service.BaseService):
             tenant_id = data_groups[0]
             object_name = data_groups[2]
 
-            container = uri[len(tenant_id)+1:-(len(object_name))]
+            container = uri[(len(tenant_id) + 1):-(len(object_name))]
 
             return (
                 tenant_id[1:],
@@ -488,5 +488,5 @@ class SwiftV1Service(base_service.BaseService):
                 )
                 return (204, headers, None)
 
-            except:
+            except Exception:
                 return (500, headers, 'Internal Server Error')

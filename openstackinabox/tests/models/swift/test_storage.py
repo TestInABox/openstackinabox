@@ -7,6 +7,7 @@ import uuid
 
 import ddt
 import mock
+import six
 from stackinabox.util.tools import CaseInsensitiveDict
 
 from openstackinabox.tests.base import TestBase
@@ -43,7 +44,7 @@ class TestSwiftStorageEtag(TestBase):
         expected_etag = local_hash.hexdigest()
 
         local_file = tempfile.NamedTemporaryFile()
-        with open(local_file.name, 'w') as output_file:
+        with open(local_file.name, 'wb') as output_file:
             output_file.write(data)
 
         self.assertEqual(
@@ -419,7 +420,7 @@ class TestSwiftStorageObject(TestSwiftStorageBase):
     def create_object_file(self, object_path, write_kilobytes):
         with open(object_path, 'w') as data_output:
             for ignored in range(write_kilobytes):
-                data_output.write(os.urandom(1024))
+                data_output.write(str(os.urandom(1024)))
 
     @ddt.data(
         False,
@@ -554,7 +555,7 @@ class TestSwiftStorageObject(TestSwiftStorageBase):
             object_data_file = tempfile.NamedTemporaryFile()
             self.create_object_file(object_data_file.name, 10)
 
-            with open(object_data_file.name, 'r') as data_input:
+            with open(object_data_file.name, 'rb') as data_input:
                 expected_data = data_input.read()
 
                 expected_file_size = os.path.getsize(object_data_file.name)
@@ -810,7 +811,7 @@ class TestSwiftStorageObject(TestSwiftStorageBase):
             self.object_name
         )
 
-        with open(object_on_disk_path, 'r') as object_on_disk:
+        with open(object_on_disk_path, 'rb') as object_on_disk:
             data_on_disk = object_on_disk.read()
             self.assertEqual(
                 data_on_disk,
@@ -829,7 +830,11 @@ class TestSwiftStorageObject(TestSwiftStorageBase):
     def test_store_object_zero_length(self):
 
         # 2kb of random data
-        content = ''
+        content = (
+            ''
+            if six.PY2
+            else b''
+        )
 
         metadata = {
             'x-tenant-id': self.tenant_id,
@@ -854,7 +859,7 @@ class TestSwiftStorageObject(TestSwiftStorageBase):
             self.object_name
         )
 
-        with open(object_on_disk_path, 'r') as object_on_disk:
+        with open(object_on_disk_path, 'rb') as object_on_disk:
             data_on_disk = object_on_disk.read()
             self.assertEqual(
                 data_on_disk,
@@ -914,7 +919,7 @@ class TestSwiftStorageObject(TestSwiftStorageBase):
                 self.object_name
             )
 
-            with open(object_on_disk_path, 'r') as object_on_disk:
+            with open(object_on_disk_path, 'rb') as object_on_disk:
                 data_on_disk = object_on_disk.read()
                 self.assertEqual(
                     data_on_disk,
