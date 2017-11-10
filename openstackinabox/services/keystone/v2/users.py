@@ -247,7 +247,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
                 user_id=user_id
             )
 
-        except:
+        except Exception:
             self.log_exception(
                 'failed to lookup user id {1} under tenant id {0}'.format(
                     user_data['tenantid'],
@@ -437,7 +437,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
                 tenant_id=user_data['tenantid'],
                 user_id=user_id
             )
-        except:
+        except Exception:
             self.log_exception('failed to get user data')
             return (404, headers, 'Not found')
 
