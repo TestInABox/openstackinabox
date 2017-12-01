@@ -19,8 +19,7 @@ class KeystoneV2ServiceTenants(KeystoneV2ServiceBase):
     def handle_listing(self, request, uri, headers):
         '''
         200, 203 -> OK
-        400 -> Bad Request: one or more required parameters
-                            are missing or invalid
+        400 -> Bad Request: one or more required parameters are missing or invalid
         401 -> not authorized
         403 -> forbidden (no permission)
         404 -> Not found
@@ -37,13 +36,16 @@ class KeystoneV2ServiceTenants(KeystoneV2ServiceBase):
 
         """
         Body on success:
-        body = {
-            'tenants' : [ {'id': 01234,
-                           'name': 'bob',
-                           'description': 'joe bob',
-                           'enabled': True }]
-            'tenants_links': []
-        }
+
+        .. code-block:: python
+
+            body = {
+                'tenants' : [ {'id': 01234,
+                               'name': 'bob',
+                               'description': 'joe bob',
+                               'enabled': True }]
+                'tenants_links': []
+            }
         """
         response_body = {
             'tenants': [

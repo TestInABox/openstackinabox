@@ -21,60 +21,61 @@ class KeystoneV2ServiceTokens(KeystoneV2ServiceBase):
         '''
         POST /tokens
 
-        Headers:
+        .. code-block:: python
 
-        Body: one of the following
-            1. user + password
-                {
-                    'auth': {
-                        'passwordCredentials': {
-                            'username': None,
-                            'password': None
+            Headers:
+
+            Body: one of the following
+                1. user + password
+                    {
+                        'auth': {
+                            'passwordCredentials': {
+                                'username': None,
+                                'password': None
+                            }
                         }
                     }
-                }
-            2. user + apikey
-                {
-                    'auth': {
-                        'RAX-KSKEY:apiKeyCredentials': {
-                            'username': None,
-                            'apiKey': None
+                2. user + apikey
+                    {
+                        'auth': {
+                            'RAX-KSKEY:apiKeyCredentials': {
+                                'username': None,
+                                'apiKey': None
+                            }
                         }
                     }
-                }
-            3. tenant-id + apikey
-                {
-                    'auth': {
-                        'RAX-KSKEY:apiKeyCredentials': {
-                            'username': None,
-                            'apiKey': None
-                        }
-                        'tenantId': None
-                        'tenantName': None
-                    }
-                }
-            4. tenant-id + token
-                {
-                    'auth': {
-                        'tenantId': None,
-                        'token': {
-                            'id': None
+                3. tenant-id + apikey
+                    {
+                        'auth': {
+                            'RAX-KSKEY:apiKeyCredentials': {
+                                'username': None,
+                                'apiKey': None
+                            }
+                            'tenantId': None
+                            'tenantName': None
                         }
                     }
-                }
-            5. tenant-name + token
-                {
-                    'auth': {
-                        'tenantName': None,
-                        'token': {
-                            'id': None
+                4. tenant-id + token
+                    {
+                        'auth': {
+                            'tenantId': None,
+                            'token': {
+                                'id': None
+                            }
                         }
                     }
-                }
+                5. tenant-name + token
+                    {
+                        'auth': {
+                            'tenantName': None,
+                            'token': {
+                                'id': None
+                            }
+                        }
+                    }
 
         200 -> OK + JSON Body w/ Service Catalog
-        400 -> Bad Request: one or more required parameters
-                            are missing or invalid
+        400 -> Bad Request: one or more required parameters are missing or invalid
         401 -> not authorized
         403 -> forbidden (no permission)
         404 -> Not found

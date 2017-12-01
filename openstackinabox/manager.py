@@ -11,24 +11,32 @@ from openstackinabox.services import (
 
 
 class OpenStackServiceManagerException(Exception):
-    pass
+    """
+    OpenStack Service Manager Base Exception
+    """
 
 
 class ServiceNotAvailable(OpenStackServiceManagerException):
-    pass
+    """
+    OpenStack Service Manager - Service Not Available
+    """
 
 
 class ServiceVersionNotAvailable(OpenStackServiceManagerException):
-    pass
+    """
+    OpenStack Service Manager - Service Version Not Available
+    """
 
 
 class KeystoneUrlNotSet(OpenStackServiceManagerException):
-    pass
+    """
+    OpenStack Service Manager - Keystone URL not set
+    """
 
 
 class OpenStackServicesManager(object):
     """
-    Service Manager
+    OpenStack Service Manager
 
     Provides the ability to decide what services are instantiated for a test
     and which of those are in the service catalog.
@@ -44,58 +52,62 @@ class OpenStackServicesManager(object):
     For `_available_services` the basic structure of the dictionary is as
     follows:
 
-    {
-        '<name>': {
-            '<version>': {
-                'service': <python class to instantiate>,
-                'access': {
-                    'in_service_catalog': <bool>,
-                    'keystone_service': None|Keystone's Version String
-                },
-                'entries': [
-                    {
-                        'version': version #, (required)
-                        'type': <service catalog service type>,
-                        'name': <service catalog service name>,
-                        'urls': {
-                            <url name>: <url format>
+    .. code-block:: python
+
+        {
+            '<name>': {
+                '<version>': {
+                    'service': `<python class to instantiate>`,
+                    'access': {
+                        'in_service_catalog': `<bool>`,
+                        'keystone_service': None|`Keystone's Version String`
+                    },
+                    'entries': [
+                        {
+                            'version': 'version #', (required)
+                            'type': '<service catalog service type>',
+                            'name': '<service catalog service name>',
+                            'urls': {
+                                '<url name>': '<url format>'
+                            }
                         }
-                    }
-                ]
+                    ]
+                }
             }
         }
-    }
 
     For `_active_services` the basic structure of the dictionary is as
     follows:
 
-    {
-        '<name>': {
-            '<version>': {
-                'instance': <python class instance>,
-                'registrations': [
-                    {
-                        'name': <service catalog name>,
-                        'type': <service catalog type>,
-                        'regions': [
-                            'list',
-                            'of',
-                            'deployed',
-                            'regions'
-                        ],
-                        'urls': {
-                            <url name>: <url format>
+    .. code-block:: python
+
+        {
+            '<name>': {
+                '<version>': {
+                    'instance': `<python class instance>`,
+                    'registrations': [
+                        {
+                            'name': '<service catalog name>',
+                            'type': '<service catalog type>',
+                            'regions': [
+                                'list',
+                                'of',
+                                'deployed',
+                                'regions'
+                            ],
+                            'urls': {
+                                '<url name>': '<url format>'
+                            }
                         }
-                    }
-                ]
+                    ]
+                }
             }
         }
-    }
 
     .. note:: Services that need access to Keystone should specify the
         `keystone_service` parameter which will then cause the Keystone
         service instance of the specified version to be passed into it
-        via the __init__ parameters.
+        via the `__init__` parameters.
 
     .. note:: If the service is not going to be in the Service Catalog
         provided by Keystone, then the `entries` can be simplified just
@@ -232,6 +244,9 @@ class OpenStackServicesManager(object):
             )
 
     def reset_all_services(self):
+        """
+        Reset all services, clearing the service catalog
+        """
         removal_set = []
         for service_name, service_version in six.iteritems(
             self._active_services
@@ -257,7 +272,7 @@ class OpenStackServicesManager(object):
         .. note:: This is independent of the internally known built-in
             services, and can be used to add random services into the system.
 
-        The service_data dict has the following format:
+        The service_data dict has the following format::
 
             {
                 'service': <Uninstantiated StackInABox Service Class>,
@@ -373,28 +388,28 @@ class OpenStackServicesManager(object):
                     )
 
         def remove_registrations():
-                total_registrations = len(
-                    self._active_services[
-                        service_name][service_version][
-                            self.SERVICE_REGISTRATIONS]
-                )
+            total_registrations = len(
+                self._active_services[
+                    service_name][service_version][
+                        self.SERVICE_REGISTRATIONS]
+            )
 
-                registrations_to_remove = []
-                for registration_count in range(total_registrations):
-                    remove_region(registration_count)
-                    if not len(self._active_services[
-                        service_name][service_version][
-                            self.SERVICE_REGISTRATIONS][registration_count][
-                                self.SERVICE_ENTRIES_REGIONS]
-                    ):
-                        registrations_to_remove.append(registration_count)
+            registrations_to_remove = []
+            for registration_count in range(total_registrations):
+                remove_region(registration_count)
+                if not len(self._active_services[
+                    service_name][service_version][
+                        self.SERVICE_REGISTRATIONS][registration_count][
+                            self.SERVICE_ENTRIES_REGIONS]
+                ):
+                    registrations_to_remove.append(registration_count)
 
-                registrations_to_remove.reverse()
+            registrations_to_remove.reverse()
 
-                for count in registrations_to_remove:
-                    del self._active_services[
-                        service_name][service_version][
-                            self.SERVICE_REGISTRATIONS][count]
+            for count in registrations_to_remove:
+                del self._active_services[
+                    service_name][service_version][
+                        self.SERVICE_REGISTRATIONS][count]
 
         def remove_version():
             if service_version in self._active_services[service_name]:

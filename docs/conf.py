@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # OpenStack-In-A-Box documentation build configuration file, created by
-# sphinx-quickstart on Thu Jun 22 23:59:58 2017.
+# sphinx-quickstart on Fri Nov 10 01:07:32 2017.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
@@ -12,9 +12,19 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-# import os
-# import sys
-# import shlex
+import sys
+import os
+import os.path
+import shlex
+
+sys.path.insert(
+    0,
+    os.path.abspath(
+        os.getcwd() + '/../openstackinabox/'
+    )
+)
+
+import openstackinabox
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -111,17 +121,14 @@ todo_include_todos = False
 
 
 # -- Options for HTML output ----------------------------------------------
-
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
-html_theme = 'alabaster'
+html_theme = 'default'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#
-# html_theme_options = {}
+#html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -160,8 +167,17 @@ html_static_path = ['_static']
 # typographically correct entities.
 #html_use_smartypants = True
 
-# Custom sidebar templates, maps document names to template names.
-#html_sidebars = {}
+# Custom sidebar templates, must be a dictionary that maps document names
+# to template names.
+#
+# This is required for the alabaster theme
+# refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
+html_sidebars = {
+    '**': [
+        'relations.html',  # needs 'show_related': True theme option to display
+        'searchbox.html',
+    ]
+}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
@@ -207,8 +223,6 @@ html_static_path = ['_static']
 # implements a search results scorer. If empty, the default will be used.
 #html_search_scorer = 'scorer.js'
 
-# -- Options for HTMLHelp output ------------------------------------------
-
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'OpenStack-In-A-Boxdoc'
 
@@ -216,24 +230,24 @@ htmlhelp_basename = 'OpenStack-In-A-Boxdoc'
 
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
-    # 'papersize': 'letterpaper',
+    #'papersize': 'letterpaper',
 
     # The font size ('10pt', '11pt' or '12pt').
-    # 'pointsize': '10pt',
+    #'pointsize': '10pt',
 
     # Additional stuff for the LaTeX preamble.
-    # 'preamble': '',
+    #'preamble': '',
 
     # Latex figure (float) alignment
-    # 'figure_align': 'htbp',
+    #'figure_align': 'htbp',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'OpenStack-In-A-Box.tex', u'OpenStack-In-A-Box Documentation',
-   u'Benjamen R. Meyer', 'manual'),
+    (master_doc, 'OpenStack-In-A-Box.tex', u'OpenStack-In-A-Box Documentation',
+     u'Benjamen R. Meyer', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -276,9 +290,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'OpenStack-In-A-Box', u'OpenStack-In-A-Box Documentation',
-   author, 'OpenStack-In-A-Box', 'One line description of project.',
-   'Miscellaneous'),
+    (master_doc, 'OpenStack-In-A-Box', u'OpenStack-In-A-Box Documentation',
+     author, 'OpenStack-In-A-Box', 'One line description of project.',
+     'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.

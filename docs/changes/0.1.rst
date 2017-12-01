@@ -1,0 +1,8 @@
+.. _0.1:
+
+ChangeLog for Stack-In-A-Box 0.1
+================================
+
+Initial Release
+
+- Basic Keystone v2 Authentication Functionality

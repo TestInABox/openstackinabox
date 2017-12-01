@@ -1,4 +1,5 @@
 """
+OpenStack-In-A-Box Swift Model Storage Backend
 """
 import hashlib
 import io
@@ -18,9 +19,18 @@ LOG = logging.getLogger(__name__)
 
 
 class SwiftStorage(object):
+    """
+    OpenStack-In-A-Box Swift Model Storage
+    """
 
     @staticmethod
     def get_etag(data):
+        """
+        Calculate the ETAG for the data
+
+        :param bytes data: data to calculate the ETAG for
+        :retval: string containing the ETAG value
+        """
         etag_generator = hashlib.md5()
         etag_generator.update(data)
 
@@ -28,6 +38,12 @@ class SwiftStorage(object):
 
     @staticmethod
     def get_file_etag(file_name):
+        """
+        Calculate the ETAG for the file data
+
+        :param bytes data: filename of the file to calculate the ETAG for
+        :retval: string containing the ETAG value
+        """
         etag_generator = hashlib.md5()
         with open(file_name, 'rb') as input_data:
             for chunk in input_data:
@@ -36,6 +52,11 @@ class SwiftStorage(object):
         return etag_generator.hexdigest()
 
     def __init__(self, service_id, model):
+        """
+        :param unicode service_id: ID to use to track logs
+        :param SwiftModel model: SwiftModel where the local paths will be
+            stored and related to the objects.
+        """
         self.__id = service_id
         self.__model = model
         self.__storage = TemporaryDirectory()
@@ -44,38 +65,79 @@ class SwiftStorage(object):
 
     @property
     def model(self):
+        """
+        Access the SwiftModel instance
+        """
         return self.__model
 
     @model.setter
     def model(self, value):
+        """
+        Set a new object as the SwiftModel
+
+        :param obj value: object to use for the SwiftModel
+        """
         self.__model = value
 
     @property
     def storage(self):
+        """
+        Access the storage area
+        """
         return self.__storage
 
     @property
     def location(self):
+        """
+        Access the storage location
+        """
         return self.storage.name
 
     @property
     def metadata(self):
+        """
+        Access object metadata
+        """
         return self.__metadata_information
 
     @property
     def custom_metadata(self):
+        """
+        Access client specified metadata
+        """
         return self.__custom_metadata
 
     def get_tenant_path(self, tenantid):
+        """
+        Access the local path for the given tenant
+
+        :param unicode tenantid: The Account's Tenant-ID
+        :retval: string containing the path
+        """
         return '{0}/{1}'.format(self.location, tenantid)
 
     def get_container_path(self, tenantid, container_name):
+        """
+        Access the local path for the tenant's container
+
+        :param unicode tenantid: The Account's Tenant-ID
+        :param unicode container_name: Tenant's Object Container
+        :retval: string containing the path
+        """
         return '{0}/{1}'.format(
             self.get_tenant_path(tenantid),
             container_name
         )
 
     def get_object_path(self, tenantid, container_name, object_name):
+        """
+        Access the local path for the tenant's object in the container
+
+        :param unicode tenantid: The Account's Tenant-ID
+        :param unicode container_name: Tenant's Object Container
+        :param unicode object_name: Object Name
+        :retval: string containing the path
+        """
         try:
             intTenantId = self.model.has_tenant(tenantid)
             intContainerId = self.model.has_container(
@@ -111,6 +173,12 @@ class SwiftStorage(object):
             raise
 
     def add_tenant(self, tenantid):
+        """
+        Add a tenant for the storage
+
+        :param unicode tenantid: The Account's Tenant-ID
+        :retval: integer - internal tenant-id from the SwiftModel
+        """
         LOG.debug(
             'Swift Service ({0}): Checking if Tenant {1} exists...'.format(
                 self.__id, tenantid
@@ -145,6 +213,12 @@ class SwiftStorage(object):
         return intTenantId
 
     def has_tenant(self, tenantid):
+        """
+        Validate the tenant-id
+
+        :param unicode tenantid: The Account's Tenant-ID
+        :retval: boolean
+        """
         try:
             intTenantId = self.model.has_tenant(tenantid)
 
@@ -160,6 +234,13 @@ class SwiftStorage(object):
             return False
 
     def add_container(self, tenantid, container_name):
+        """
+        Add a container to tenant for the storage
+
+        :param unicode tenantid: The Account's Tenant-ID
+        :param unicode container_name: Tenant's Object Container
+        :retval: integer - internal container-id from the SwiftModel
+        """
         LOG.debug(
             'Swift Service ({0}): Checking for container\'s tenant - '
             '{1}'.format(
@@ -204,6 +285,13 @@ class SwiftStorage(object):
         return (intTenantId, intContainerId)
 
     def has_container(self, tenantid, container_name):
+        """
+        Validate a container for tenant in storage
+
+        :param unicode tenantid: The Account's Tenant-ID
+        :param unicode container_name: Tenant's Object Container
+        :retval: boolean
+        """
         try:
             intTenantId = self.model.has_tenant(tenantid)
             intContainerId = self.model.has_container(
@@ -227,6 +315,13 @@ class SwiftStorage(object):
             return False
 
     def get_container(self, tenantid, container_name):
+        """
+        Access the container to tenant for the storage
+
+        :param unicode tenantid: The Account's Tenant-ID
+        :param unicode container_name: Tenant's Object Container
+        :retval: tuple - (Internal Tenant-Id, Internal Container-Id)
+        """
         try:
             intTenantId = self.model.has_tenant(tenantid)
             intContainerId = self.model.has_container(
@@ -245,6 +340,14 @@ class SwiftStorage(object):
             return (None, None)
 
     def has_object(self, tenantid, container_name, object_name):
+        """
+        Validate a object in container for tenant in storage
+
+        :param unicode tenantid: The Account's Tenant-ID
+        :param unicode container_name: Tenant's Object Container
+        :param unicode object_name: Object Name for the object in the container
+        :retval: boolean
+        """
         try:
             intTenantId = self.model.has_tenant(tenantid)
             intContainerId = self.model.has_container(
@@ -278,6 +381,18 @@ class SwiftStorage(object):
         self, tenantid, container_name, object_name, file_name, file_size=None,
         allow_file_size_mismatch=False
     ):
+        """
+        Load the data from a given file into the object storage
+
+        :param unicode tenantid: The Account's Tenant-ID
+        :param unicode container_name: Tenant's Object Container
+        :param unicode object_name: Object Name for the object in the container
+        :param unicode file_name: file to load the data from
+        :param integer file_size: size of the file data, used for the
+            content-length
+        :param boolean allow_file_size_mismatch: whether the actual file size
+            and the specified file_size match up
+        """
         LOG.debug(
             'Swift Service ({0}): Checking that tenant {1} has container '
             '{2}'.format(
@@ -318,6 +433,18 @@ class SwiftStorage(object):
         self, tenantid, container_name, object_name, content, file_size=None,
         allow_file_size_mismatch=False
     ):
+        """
+        Load the data into the object storage
+
+        :param unicode tenantid: The Account's Tenant-ID
+        :param unicode container_name: Tenant's Object Container
+        :param unicode object_name: Object Name for the object in the container
+        :param unicode content: data to store
+        :param integer file_size: size of the file data, used for the
+            content-length
+        :param boolean allow_file_size_mismatch: whether the actual file size
+            and the specified file_size match up
+        """
         LOG.debug(
             'Swift Service ({0}): Checking that tenant {1} has container '
             '{2}'.format(
@@ -354,6 +481,16 @@ class SwiftStorage(object):
     def update_object_etag(
         self, tenantid, container_name, object_name, new_etag
     ):
+        """
+        Update the ETAG on the object
+
+        :param unicode tenantid: The Account's Tenant-ID
+        :param unicode container_name: Tenant's Object Container
+        :param unicode object_name: Object Name for the object in the container
+        :param unicode new_etag: the etag to set on the object
+
+        .. note:: This only updates if the object already exists
+        """
         path = self.get_object_path(tenantid, container_name, object_name)
         if path in self.metadata:
             self.metadata[path]['etag'] = new_etag
@@ -361,6 +498,14 @@ class SwiftStorage(object):
     def store_or_update_custom_metadata(
         self, tenantid, container_name, object_name, metadata
     ):
+        """
+        Store or update the custom metadata for the object
+
+        :param unicode tenantid: The Account's Tenant-ID
+        :param unicode container_name: Tenant's Object Container
+        :param unicode object_name: Object Name for the object in the container
+        :param dict metadata: object metadata
+        """
         LOG.debug(
             'Swift Service ({0}): Storing custom metadata - {1}'.format(
                 self.__id, metadata
@@ -402,6 +547,13 @@ class SwiftStorage(object):
         return custom_metadata
 
     def remove_custom_metadata(self, tenantid, container_name, object_name):
+        """
+        Remove the custom metadata for the object
+
+        :param unicode tenantid: The Account's Tenant-ID
+        :param unicode container_name: Tenant's Object Container
+        :param unicode object_name: Object Name for the object in the container
+        """
         path = self.get_object_path(tenantid, container_name, object_name)
         if path in self.custom_metadata:
             del self.custom_metadata[path]
@@ -410,6 +562,19 @@ class SwiftStorage(object):
         self, tenantid, container_name, object_name, content, metadata,
         file_size=None, allow_file_size_mismatch=False
     ):
+        """
+        store the data into the storage backend
+
+        :param unicode tenantid: The Account's Tenant-ID
+        :param unicode container_name: Tenant's Object Container
+        :param unicode object_name: Object Name for the object in the container
+        :param unicode content: data to store
+        :param integer file_size: size of the file data, used for the
+            content-length
+        :param boolean allow_file_size_mismatch: whether the actual file size
+            and the specified file_size match up
+        :raises: RuntimeError if the data could not be written properly
+        """
         path = None
         if self.has_container(tenantid, container_name):
             intTenantId, intContainerId = self.get_container(
@@ -518,6 +683,14 @@ class SwiftStorage(object):
         LOG.debug('Swift Service ({0}): Metadata stored'.format(self.__id))
 
     def retrieve_object(self, tenantid, container_name, object_name):
+        """
+        retrieve the object data from the storage backend
+
+        :param unicode tenantid: The Account's Tenant-ID
+        :param unicode container_name: Tenant's Object Container
+        :param unicode object_name: Object Name for the object in the container
+        :retval: tuple - (object data, object's metadata)
+        """
         if self.has_object(tenantid, container_name, object_name):
             metadata = CaseInsensitiveDict()
             path = self.get_object_path(
@@ -566,7 +739,7 @@ class SwiftStorage(object):
                 )
                 data.seek(0, os.SEEK_SET)
 
-            except Exception as ex:
+            except Exception:
                 LOG.exception('Failed to read object from disk')
                 data = None
 
@@ -578,6 +751,13 @@ class SwiftStorage(object):
             return (None, None)
 
     def remove_object(self, tenantid, container_name, object_name):
+        """
+        remove the data from the storage backend
+
+        :param unicode tenantid: The Account's Tenant-ID
+        :param unicode container_name: Tenant's Object Container
+        :param unicode object_name: Object Name for the object in the container
+        """
         if self.has_object(tenantid, container_name, object_name):
             intTenantId, intContainerId = self.get_container(
                 tenantid, container_name
