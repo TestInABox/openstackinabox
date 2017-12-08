@@ -31,28 +31,54 @@ SQL_GET_ROLES_FOR_USER = '''
 
 
 class KeystoneDbRoles(KeystoneDbBase):
+    """
+    Service User Role Model
+
+    :cvar unicode IDENTITY_ADMIN_ROLE: global tenant admin group
+    :cvar unicode IDENTITY_VIEWER_ROLE: global tenant view-only group
+    """
 
     IDENTITY_ADMIN_ROLE = 'identity:user-admin'
     IDENTITY_VIEWER_ROLE = 'identity:observer'
 
     def __init__(self, master, db):
+        """
+        :param ModelDbBase master: master model for cross-referencing
+        :param sqlite3 db: Sqlite3 database for data storage
+        """
         super(KeystoneDbRoles, self).__init__("KeystoneRoles", master, db)
         self.__admin_role_id = None
         self.__viewer_role_id = None
 
     @property
     def admin_role_id(self):
+        """
+        Access the internal role id of the built-in admin group
+        """
         return self.__admin_role_id
 
     @property
     def viewer_role_id(self):
+        """
+        Access the internal role id for the built-in view-only group
+        """
         return self.__viewer_role_id
 
     def initialize(self):
+        """
+        Create the built-in groups
+        """
         self.__admin_role_id = self.add(self.IDENTITY_ADMIN_ROLE)
         self.__viewer_role_id = self.add(self.IDENTITY_VIEWER_ROLE)
 
     def add(self, name):
+        """
+        Add a new role
+
+        :param unicode name: name of the role
+        :raises: KeystoneRoleError
+        :retval: int - internal id of the role
+        """
         dbcursor = self.database.cursor()
         args = {
             'name': name
@@ -66,6 +92,13 @@ class KeystoneDbRoles(KeystoneDbBase):
         return self.get(name)['id']
 
     def get(self, name):
+        """
+        Retrieve the role information
+
+        :param unicode name: name of the role
+        :raises: KeystoneRoleError
+        :retval: dict containing the role information
+        """
         dbcursor = self.database.cursor()
         args = {
             'name': name
@@ -81,6 +114,14 @@ class KeystoneDbRoles(KeystoneDbBase):
         }
 
     def add_user_role_by_id(self, tenant_id=None, user_id=None, role_id=None):
+        """
+        Map a user to a role using the internal role id
+
+        :param int tenant_id: internal tenant id
+        :param int user_id: internal user id
+        :param int role_id: internal role id
+        :raises: KeystoneRoleError
+        """
         dbcursor = self.database.cursor()
         args = {
             'tenant_id': tenant_id,
@@ -108,6 +149,17 @@ class KeystoneDbRoles(KeystoneDbBase):
 
     def add_user_role_by_role_name(self, tenant_id=None, user_id=None,
                                    role_name=None):
+        """
+        Map a user to a role using the role name
+
+        :param int tenant_id: internal tenant id
+        :param int user_id: internal user id
+        :param unicode role_name: name of the role
+        :raises: KeystoneRoleError
+
+        .. note:: If two roles with the same name may have an
+            unpredictable result.
+        """
         role_data = self.get(name=role_name)
         self.add_user_role_by_id(
             tenant_id=tenant_id,
@@ -116,6 +168,14 @@ class KeystoneDbRoles(KeystoneDbBase):
         )
 
     def get_user_roles(self, tenant_id=None, user_id=None):
+        """
+        Access all roles associated with a given user for a given tenant
+
+        :param int tenant_id: internal tenant id
+        :param int user_id: internal user id
+        :retval: list of dicts containing all the role information for
+            the specified tenant's user-id
+        """
         dbcursor = self.database.cursor()
         args = {
             'tenant_id': tenant_id,

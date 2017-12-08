@@ -7,17 +7,32 @@ from openstackinabox.models.keystone.db.base import KeystoneDbBase
 
 
 class UtcTimezone(datetime.tzinfo):
+    """
+    UTC Timezone manager so all times come out in UTC
+    """
 
     def _offset(self):
+        """
+        Timezone Offset - GMT+0
+        """
         return datetime.timedelta(0)
 
     def utcoffset(self, dt):
+        """
+        Access the UTC Offset
+        """
         return self._offset()
 
     def tzname(self, dt):
+        """
+        Timezone Name
+        """
         return 'UTC'
 
     def dst(self, dt):
+        """
+        Access the Daylight Saving Time (DST) Offset
+        """
         return self._offset()
 
 
@@ -91,23 +106,44 @@ SQL_VALIDATE_TOKEN = '''
 
 
 class KeystoneDbTokens(KeystoneDbBase):
+    """
+    Token Model
+
+    :cvar unicode EXPIRE_TIME_FORMAT: time format for the tokens
+    """
 
     '''2015-02-03 02:31:17'''
     EXPIRE_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
     def __init__(self, master, db):
+        """
+        :param ModelDbBase master: master model for cross-referencing
+        :param sqlite3 db: Sqlite3 database for data storage
+        """
         super(KeystoneDbTokens, self).__init__("KeystoneTokens", master, db)
         self.__admin_token = None
 
     def initialize(self):
+        """
+        Initialize the special service admin token
+        """
         self.__admin_token = 'adminstrate_with_this_{0}'.format(uuid.uuid4())
 
     @property
     def admin_token(self):
+        """
+        Access the special service admin token
+        """
         return self.__admin_token
 
     @staticmethod
     def convert_to_utc(dt):
+        """
+        Convert the time to UTC
+
+        :param datetime.datetime dt: datatime to convert
+        :retval: datetime.datetime - datetime converted to UTC
+        """
         if dt.utcoffset() is not None:
             return dt.replace(tzinfo=UtcTimezone())
         else:
@@ -115,6 +151,20 @@ class KeystoneDbTokens(KeystoneDbBase):
 
     def add(self, tenant_id=None, user_id=None,
             expire_time=None, token=None):
+        """
+        Add a new token
+
+        :param int tenant_id: tenant id to add the token for
+        :param int user_id: internal user id for to add the token for
+        :param datetime.datetime expire_time: (optional) expiration time of the token
+        :param unicode token: (optional) token to add
+        :raises: KeystoneTokenError
+        :retval: unicode - token assigned to the user
+
+        .. note:: if no token is specified then one is auto-generated
+        .. note:: if the expiration time is not specified then the default lifetime
+            of 12-hours is used.
+        """
         if token is None:
             token = self.make_token()
 
@@ -142,6 +192,15 @@ class KeystoneDbTokens(KeystoneDbBase):
         return token
 
     def revoke(self, tenant_id=None, user_id=None, token=None, reset=False):
+        """
+        Revoke or reset the revocation status of a token
+
+        :param int tenant_id: tenant id to add the token for
+        :param int user_id: internal user id for to add the token for
+        :param unicode token: token to revoke or re-enable
+        :param boolean reset: whether or not to re-enable the token for use
+        :raises: KeystoneTokenError
+        """
         dbcursor = self.database.cursor()
         args = {
             'tenant_id': tenant_id,
@@ -160,6 +219,13 @@ class KeystoneDbTokens(KeystoneDbBase):
         self.database.commit()
 
     def delete(self, tenant_id=None, user_id=None, token=None):
+        """
+        Remove a specified token
+
+        :param int tenant_id: tenant id to add the token for
+        :param int user_id: internal user id for to add the token for
+        :param unicode token: token to remove
+        """
         dbcursor = self.database.cursor()
         args = {
             'tenant_id': tenant_id,
@@ -178,6 +244,16 @@ class KeystoneDbTokens(KeystoneDbBase):
         self.database.commit()
 
     def get_by_user_id(self, user_id=None):
+        """
+        Retrieve a token for the user
+
+        :param int user_id: user id to retrieve the token information for
+        :raises: KeystoneUnknownUserError
+        :retval: dict containing the token information
+
+        .. note:: this only returns the first token even if multiple are
+            valid for the user.
+        """
         dbcursor = self.database.cursor()
         args = {
             'user_id': user_id
@@ -198,6 +274,13 @@ class KeystoneDbTokens(KeystoneDbBase):
         }
 
     def get_by_tenant_id(self, tenant_id):
+        """
+        Retrieve all tokens for the tenant
+
+        :param int tenant_id: tenant id to retrieve the token information for
+        :retval: list of dict containing the token information for all
+            users under the tenant
+        """
         dbcursor = self.database.cursor()
         args = {
             'tenant_id': tenant_id
@@ -216,6 +299,16 @@ class KeystoneDbTokens(KeystoneDbBase):
         ]
 
     def get_by_username(self, username=None):
+        """
+        Retrieve a token for the username
+
+        :param unicode username: user name to retrieve the token information for
+        :raises: KeystoneUnknownUserError
+        :retval: dict containing the token information
+
+        .. note:: this only returns the first token even if multiple are
+            valid for the user.
+        """
         dbcursor = self.database.cursor()
         args = {
             'username': username
@@ -235,6 +328,13 @@ class KeystoneDbTokens(KeystoneDbBase):
 
     @classmethod
     def check_expiration(cls, token):
+        """
+        Check if the token has expired
+
+        :param dict token: token information
+        :raises: KeystoneExpiredTokenError if the token has expired
+        :raises: KeystoneRevokedTokenError if the token has been revoked
+        """
         if token['revoked']:
             raise exceptions.KeystoneRevokedTokenError('Token was revoked')
 
@@ -250,6 +350,15 @@ class KeystoneDbTokens(KeystoneDbBase):
             )
 
     def validate_token(self, token):
+        """
+        Check whether a given token is valid
+
+        :param unicode token: token to validate
+        :raises: KeystoneInvalidTokenError if the token is not valid
+        :raises: KeystoneExpiredTokenError if the token has expired
+        :raises: KeystoneRevokedTokenError if the token has been revoked
+        :retval: dict contianing the token information
+        """
         dbcursor = self.database.cursor()
         args = {
             'token': token

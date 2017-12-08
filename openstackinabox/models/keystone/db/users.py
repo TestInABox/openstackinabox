@@ -64,12 +64,22 @@ SQL_GET_USERS_FOR_TENANT_ID = '''
 
 
 class KeystoneDbUsers(KeystoneDbBase):
+    """
+    User Model
+    """
+
     def __init__(self, master, db):
+        """
+        :param ModelDbBase master: master model for cross-referencing
+        :param sqlite3 db: Sqlite3 database for data storage
+        """
         super(KeystoneDbUsers, self).__init__("KeystoneUsers", master, db)
         self.__admin_user_id = None
 
     def initialize(self):
-        # Create an admin user and add the admin token to that user
+        """
+        Create an admin user and add the admin token to that user
+        """
         self.__admin_user_id = self.add(
             tenant_id=self.master.tenants.admin_tenant_id,
             username='system',
@@ -85,10 +95,26 @@ class KeystoneDbUsers(KeystoneDbBase):
 
     @property
     def admin_user_id(self):
+        """
+        Access the admin service user id
+        """
         return self.__admin_user_id
 
     def add(self, tenant_id=None, username=None, email=None,
             password=None, apikey=None, enabled=True):
+        """
+        Add a new user to the tenant
+
+        :param int tenant_id: tenant id to create the user for
+        :param unicode username: name of the use
+        :param unicode email: email address for contacting the user
+        :param unicode password: password for the user
+        :param unicode apikey: API Key for the user
+        :param boolean enabled: whether or not the user is active
+        :raises: KeystoneUserError
+        :retval: int - internal user id
+        """
+
         args = {
             'tenant_id': tenant_id,
             'username': username,
@@ -119,6 +145,12 @@ class KeystoneDbUsers(KeystoneDbBase):
         return user_id
 
     def delete(self, tenant_id=None, user_id=None):
+        """
+        Remove a user for a given tenant
+
+        :param int tenant_id: tenant id to remove the user from
+        :param int user_id: internal user id to remove
+        """
         args = {
             'tenant_id': tenant_id,
             'user_id': user_id
@@ -129,6 +161,14 @@ class KeystoneDbUsers(KeystoneDbBase):
         self.database.commit()
 
     def get_by_id(self, tenant_id=None, user_id=None):
+        """
+        Get user by id
+
+        :param int tenant_id: tenant id containing the user
+        :param int user_id: internal user id of the user
+        :raises: KeystoneUnknownUserError
+        :retval: dict containing the user information
+        """
         dbcursor = self.database.cursor()
         args = {
             'tenant_id': tenant_id,
@@ -152,6 +192,14 @@ class KeystoneDbUsers(KeystoneDbBase):
         }
 
     def get_by_name(self, tenant_id=None, username=None):
+        """
+        Get the user by username
+
+        :param int tenant_id: tenant id containing the user
+        :param unicode username: username to lookup
+        :raises: KeystoneUnknownUserError
+        :retval: dict containing the user information
+        """
         dbcursor = self.database.cursor()
         args = {
             'tenant_id': tenant_id,
@@ -175,6 +223,17 @@ class KeystoneDbUsers(KeystoneDbBase):
         }
 
     def get_by_name_or_tenant_id(self, tenant_id=None, username=None):
+        """
+        Get all users by username or tenant-id
+
+        :param int tenant_id: (optional) tenant id to add the token for
+        :param int username: (optional) name of the user to query
+        :retval: iterable of the dicts containing the user information
+
+        .. note:: tenant_id or username must be specified; username
+            takes precedences. tenant_id is default.
+        .. note:: This query may return values across tenants.
+        """
         sql_query = None
         args = {}
         if username is not None:
@@ -198,6 +257,20 @@ class KeystoneDbUsers(KeystoneDbBase):
 
     def update_by_id(self, tenant_id=None, user_id=None, email=None,
                      password=None, apikey=None, enabled=True):
+        """
+        Update the user information by user-id
+
+        :param int tenant_id: tenant id to create the user for
+        :param int user_id: user id for user
+        :param unicode email: email address for contacting the user
+        :param unicode password: password for the user
+        :param unicode apikey: API Key for the user
+        :param boolean enabled: whether or not the user is active
+        :raises: KeystoneUnknownUserError
+
+        .. note:: the username is not allowed to be changed
+        """
+
         dbcursor = self.database.cursor()
         args = {
             'tenant_id': tenant_id,
@@ -216,6 +289,12 @@ class KeystoneDbUsers(KeystoneDbBase):
         self.database.commit()
 
     def get_for_tenant_id(self, tenant_id):
+        """
+        Get all users for a given tenant-id
+
+        :param int tenant_id: tenant id to add the token for
+        :retval: list of the dicts containing the user information
+        """
         dbcursor = self.database.cursor()
         args = {
             'tenant_id': tenant_id

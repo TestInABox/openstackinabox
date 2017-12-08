@@ -71,8 +71,8 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
 
         response_body = {
             'users': [
-                user_data_filter(user_info)
-                for user_info in
+                user_data_filter(tenant_user_info)
+                for tenant_user_info in
                 self.model.users.get_for_tenant_id(
                     user_data['tenantid']
                 )
@@ -83,8 +83,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
     def handle_add_user(self, request, uri, headers):
         '''
         201 -> created
-        400 -> Bad Request - missing one or more element, or values were
-                             invalid
+        400 -> Bad Request - missing one or more element, or values were invalid
         401 -> unauthorized
         403 -> forbidden (no permission)
         404 -> not found
@@ -94,44 +93,46 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
         415 -> bad media type
         503 -> service not available
 
-        Note: Admins can add up to 100 users to an account.
+        .. note:: Admins can add up to 100 users to an account.
 
-        Required:
-            x-auth-token
+        .. note:: password is optional
 
-        Body:
-        {
-            'username': <username>,
-            'email': <email>,
-            'enabled': True/False,
-            'OS-KSADM:password': <string>
-        }
+        .. code-block:: text
 
-        Note: password is optional
+            Required:
+                x-auth-token
 
-        Spec:
-            username:
-                must start with a letter
-                must be at least 1 character long
-                may contain: upper and lower case characters and ._@-
-            password:
-                must start with a letter
-                must be at least 8 characters long
-                must contain 1 upper case, 1 lowercase, and 1 numeric value
-                may contain: .-@_
-
-        Response:
-        {
-            'user': {
+            Body:
+            {
                 'username': <username>,
-                'OS-KSADM:password': <password>,
-                'email': <email>
-                'RAX-AUTH:defaultRegion': <region>,
-                'RAX-AUTH:domainId': <domain>,
-                'id': <id>,
-                'enabled': True/False
+                'email': <email>,
+                'enabled': True/False,
+                'OS-KSADM:password': <string>
             }
-        }
+
+            Spec:
+                username:
+                    must start with a letter
+                    must be at least 1 character long
+                    may contain: upper and lower case characters and ._@-
+                password:
+                    must start with a letter
+                    must be at least 8 characters long
+                    must contain 1 upper case, 1 lowercase, and 1 numeric value
+                    may contain: .-@_
+
+            Response:
+            {
+                'user': {
+                    'username': <username>,
+                    'OS-KSADM:password': <password>,
+                    'email': <email>
+                    'RAX-AUTH:defaultRegion': <region>,
+                    'RAX-AUTH:domainId': <domain>,
+                    'id': <id>,
+                    'enabled': True/False
+                }
+            }
         '''
         self.log_request(uri, request)
         req_headers = request.headers
@@ -186,7 +187,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
 
             return (201, headers, '')
 
-        except Exception as ex:
+        except Exception:
             self.log_exception('User Add Failure')
             # is 404 correct?
             return (404, headers, 'failed to add user')
@@ -209,18 +210,20 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
 
         No body
 
-        response:
-        {
-            'user': {
-                'RAX-AUTH:defaultRegion': <region>
-                'RAX-AUTH:domainId': <domain>
-                'RAX-AUTH:multiFactorEnabled': True/False
-                'id': <userid>
-                'username': <username>
-                'email': <email>
-                'enabled': True/False
+        .. code-block:: text
+
+            response:
+            {
+                'user': {
+                    'RAX-AUTH:defaultRegion': <region>
+                    'RAX-AUTH:domainId': <domain>
+                    'RAX-AUTH:multiFactorEnabled': True/False
+                    'id': <userid>
+                    'username': <username>
+                    'email': <email>
+                    'enabled': True/False
+                }
             }
-        }
         '''
         self.log_request(uri, request)
         req_headers = request.headers
@@ -237,7 +240,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
             self.log_debug('Lookup of user id {0} requested'
                            .format(user_id))
 
-        except Exception as ex:  # pragma: no cover
+        except Exception:  # pragma: no cover
             self.log_exception('Failed to get user id from path')
             return (400, headers, 'bad request')
 
@@ -293,7 +296,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
             user_id = KeystoneV2ServiceUsers.get_user_id_from_path(uri)
             self.log_debug('Lookup of user id {0} requested'.format(user_id))
 
-        except Exception as ex:  # pragma: no cover
+        except Exception:  # pragma: no cover
             self.log_exception('Failed to get user id from path')
             return (400, headers, 'bad request')
 
@@ -313,7 +316,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
                 tenant_id=user_data['tenantid'],
                 user_id=user_id
             )
-        except Exception as ex:
+        except Exception:
             self.log_exception('failed to get user data')
             return (404, headers, 'Not Found')
 
@@ -335,7 +338,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
                 apikey=user_info['apikey'],
                 enabled=user_info['enabled']
             )
-        except Exception as ex:  # pragma: no cover
+        except Exception:  # pragma: no cover
             self.log_exception('failed to update user')
             return (503, headers, 'Server error')
 
@@ -367,7 +370,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
             self.log_debug('Lookup of user id {0} requested'
                            .format(user_id))
 
-        except Exception as ex:  # pragma: no cover
+        except Exception:  # pragma: no cover
             self.log_exception('Failed to get user id from path')
             return (400, headers, 'bad request')
 
@@ -376,7 +379,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
                 tenant_id=user_data['tenantid'],
                 user_id=user_id
             )
-        except Exception as ex:
+        except Exception:
             self.log_exception('failed to get user data')
             return (404, headers, 'Not Found')
 
@@ -386,7 +389,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
                 user_id=user_id
             )
 
-        except Exception as ex:  # pragma: no cover
+        except Exception:  # pragma: no cover
             self.log_exception('failed to delete user')
             return (503, headers, 'Server error')
 
@@ -428,7 +431,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
             user_id = KeystoneV2ServiceUsers.get_user_id_from_path(uri)
             self.log_debug('Lookup of user id {0} requested'.format(user_id))
 
-        except Exception as ex:  # pragma: no cover
+        except Exception:  # pragma: no cover
             self.log_exception('Failed to get user id from path')
             return (400, headers, 'bad request')
 
@@ -457,7 +460,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
                 enabled=user_info['enabled']
             )
 
-        except Exception as ex:  # pragma: no cover
+        except Exception:  # pragma: no cover
             self.log_exception('failed to update user')
             return (503, headers, 'Server error')
 

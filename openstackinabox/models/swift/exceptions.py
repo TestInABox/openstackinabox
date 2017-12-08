@@ -1,18 +1,28 @@
 """
+OpenStack-In-A-Box Swift Model Exceptions
 """
+from openstackinabox.models import base_model
 
 
-class SwiftExceptions(Exception):
-    pass
+class SwiftExceptions(base_model.BaseModelExceptions):
+    """
+    Base of the exceptions for the OpenStack-In-A-Box Swift Model
+    """
 
 
 class SwiftUnknownTenantError(SwiftExceptions):
-    pass
+    """
+    Unknown Tenant
+    """
 
 
 class SwiftUnknownContainerError(SwiftExceptions):
-    pass
+    """
+    Unknown Container Error
+    """
 
 
 class SwiftUnknownObjectError(SwiftExceptions):
-    pass
+    """
+    Unknown Object Error
+    """

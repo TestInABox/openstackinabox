@@ -5,68 +5,102 @@ from openstackinabox.models.base_model import BaseModelExceptions
 
 
 class KeystoneError(BaseModelExceptions):
-    pass
+    """
+    Base Keystone Model Exception
+    """
 
 
 class KeystoneTenantError(KeystoneError):
-    pass
+    """
+    Tenant Related Errors
+    """
 
 
 class KeystoneUserError(KeystoneError):
-    pass
+    """
+    User Related Errors
+    """
 
 
 class KeystoneDisabledUserError(KeystoneUserError):
-    pass
+    """
+    User is disabled
+    """
 
 
 class KeystoneUnknownUserError(KeystoneUserError):
-    pass
+    """
+    Unknown User Error
+    """
 
 
 class KeystoneUserAuthError(KeystoneUserError):
-    pass
+    """
+    User Authentication Error
+    """
 
 
 class KeystoneUserInvalidPasswordError(KeystoneUserAuthError):
-    pass
+    """
+    User Password is invalid
+    """
 
 
 class KeystoneUserInvalidApiKeyError(KeystoneUserAuthError):
-    pass
+    """
+    User API Key is invalid
+    """
 
 
 class KeystoneTokenError(KeystoneError):
-    pass
+    """
+    Token related errors
+    """
 
 
 class KeystoneInvalidTokenError(KeystoneTokenError):
-    pass
+    """
+    Invalid Token Error
+    """
 
 
 class KeystoneRevokedTokenError(KeystoneInvalidTokenError):
-    pass
+    """
+    Token Invalid due to being explicitly revoked
+    """
 
 
 class KeystoneExpiredTokenError(KeystoneInvalidTokenError):
-    pass
+    """
+    Token invalid due to expiration
+    """
 
 
 class KeystoneRoleError(KeystoneError):
-    pass
+    """
+    Role related errors
+    """
 
 
 class KeystoneServiceCatalogError(KeystoneError):
-    pass
+    """
+    Service Catalog related errors
+    """
 
 
 class KeystoneServiceCatalogServiceError(KeystoneServiceCatalogError):
-    pass
+    """
+    Service Catalog Service entry error
+    """
 
 
 class KeystoneServiceCatalogEndpointError(KeystoneServiceCatalogError):
-    pass
+    """
+    Service Catalog Endpoint Error
+    """
 
 
 class KeystoneEndpointUrlError(KeystoneServiceCatalogEndpointError):
-    pass
+    """
+    Service Catalog Endpoint URL Error
+    """
