@@ -45,15 +45,29 @@ SQL_UPDATE_TENANT_STATUS = '''
 
 
 class KeystoneDbTenants(KeystoneDbBase):
+    """
+    Tenant Model
+
+    :cvar unicode SYSTEM_TENANT_NAME: global system tenant used for the admin
+        service user
+    :cvar unicode SYSTEM_TENANT_DESCRIPTION: global tenant description
+    """
 
     SYSTEM_TENANT_NAME = 'system'
     SYSTEM_TENANT_DESCRIPTION = 'system administrator'
 
     def __init__(self, master, db):
+        """
+        :param ModelDbBase master: master model for cross-referencing
+        :param sqlite3 db: Sqlite3 database for data storage
+        """
         super(KeystoneDbTenants, self).__init__("KeystoneTenants", master, db)
         self.__admin_tenant_id = None
 
     def initialize(self):
+        """
+        Create the built-in tenant
+        """
         self.__admin_tenant_id = self.add(
             tenant_name=self.SYSTEM_TENANT_NAME,
             description=self.SYSTEM_TENANT_DESCRIPTION,
@@ -62,9 +76,22 @@ class KeystoneDbTenants(KeystoneDbBase):
 
     @property
     def admin_tenant_id(self):
+        """
+        Access the administrative tenant id
+        """
         return self.__admin_tenant_id
 
     def add(self, tenant_name=None, description=None, enabled=True):
+        """
+        Add a new tenant
+
+        :param unicode tenant_name: tenant display name
+        :param unicode description: account description
+        :param boolean enabled: whether or not the account is active
+            and available for user
+        :raises: KeystoneTenantError
+        :retval: int - tenant id
+        """
         args = {
             'name': tenant_name,
             'description': description,
@@ -96,6 +123,11 @@ class KeystoneDbTenants(KeystoneDbBase):
         return tenant_id
 
     def get(self):
+        """
+        Retrieve all tenants
+
+        :retval: list of dict entries, one entry per tenant
+        """
         dbcursor = self.database.cursor()
         tenant_list = []
         for row in dbcursor.execute(SQL_GET_ALL_TENANTS):
@@ -110,6 +142,13 @@ class KeystoneDbTenants(KeystoneDbBase):
     # TODO(BenjamenMeyer): delete
 
     def get_by_id(self, tenant_id):
+        """
+        Get a tenant for a given tenant id
+
+        :param int tenant_id: tenant id of the desired tenant
+        :raises: KeystoneTenantError
+        :retval: dict containing the tenant information
+        """
         dbcursor = self.database.cursor()
         args = {
             'tenant_id': tenant_id
@@ -127,6 +166,18 @@ class KeystoneDbTenants(KeystoneDbBase):
         }
 
     def get_by_name(self, tenant_name):
+        """
+        Get a tenant for a given tenant name
+
+        :param unicode tenant_name: tenant name of the desired tenant
+        :raises: KeystoneTenantError
+        :retval: dict containing the tenant information
+
+
+        .. note:: This is not guaranteed to be unique and therefore may
+            not return what is expected if multiple tenants have the
+            same tenant name, in which case only the first is returned
+        """
         dbcursor = self.database.cursor()
         args = {
             'tenant_name': tenant_name
@@ -144,6 +195,16 @@ class KeystoneDbTenants(KeystoneDbBase):
         }
 
     def update_description(self, tenant_id=None, description=None):
+        """
+        Update the account description for a given tenant
+
+        :param int tenant_id: tenant id of the desired tenant
+        :param unicode description: new account description for the tenant
+        :raises: KeystoneTenantError
+
+        .. note:: parameters are keyword parameters but are nonetheless
+            required
+        """
         dbcursor = self.database.cursor()
         args = {
             'tenant_id': tenant_id,
@@ -156,6 +217,16 @@ class KeystoneDbTenants(KeystoneDbBase):
         self.database.commit()
 
     def update_status(self, tenant_id=None, enabled=None):
+        """
+        Update the account active status for a given tenant
+
+        :param int tenant_id: tenant id of the desired tenant
+        :param boolean enabled: whether or not the account is enabled
+        :raises: KeystoneTenantError
+
+        .. note:: parameters are keyword parameters but are nonetheless
+            required
+        """
         dbcursor = self.database.cursor()
         args = {
             'tenant_id': tenant_id,

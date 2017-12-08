@@ -32,16 +32,33 @@ SQL_REMOVE_SERVICE = '''
 
 
 class KeystoneDbServices(KeystoneDbBase):
+    """
+    Service Model
+    """
 
     def __init__(self, master, db):
+        """
+        :param ModelDbBase master: master model for cross-referencing
+        :param sqlite3 db: Sqlite3 database for data storage
+        """
         super(KeystoneDbServices, self).__init__(
             "KeystoneServices", master, db
         )
 
     def initialize(self):
-        pass
+        """
+        Nothing to initialize
+        """
 
     def add(self, service_name, service_type):
+        """
+        Add a new service
+
+        :param unicode service_name: name of the service
+        :param unicode service_type: type of service
+        :raises: KeystoneServiceCatalogServiceError
+        :retval: int - internal id of the service
+        """
         dbcursor = self.database.cursor()
         args = {
             'name': service_name,
@@ -50,11 +67,7 @@ class KeystoneDbServices(KeystoneDbBase):
         dbcursor.execute(SQL_ADD_SERVICE, args)
         if not dbcursor.rowcount:
             raise exceptions.KeystoneServiceCatalogServiceError(
-                'Unable to add service'
-            )
-        self.database.commit()
 
-        dbcursor.execute(SQL_GET_MAX_SERVICE_ID)
         service_data = dbcursor.fetchone()
         if service_data is None:
             raise exceptions.KeystoneServiceCatalogServiceError(
@@ -72,11 +85,19 @@ class KeystoneDbServices(KeystoneDbBase):
         return service_id
 
     def get(self, service_id=None):
+        """
+        Retrieve the service information
+
+        :param int service_id: (optional) internal service id
+        :retval: iterable of dict containing the role information
+
+        .. note:: if service_id is not specified then all services
+            will be returned
+        """
         dbcursor = self.database.cursor()
         args = {}
 
-        query = SQL_GET_SERVICES
-        if service_id is not None:
+        query = SQL_GET_SERVICESif service_id is not None:
             args['service_id'] = service_id
             query = SQL_GET_SERVICE_BY_ID
 
@@ -88,6 +109,12 @@ class KeystoneDbServices(KeystoneDbBase):
             }
 
     def delete(self, service_id):
+        """
+        Remove the service information
+
+        :param int service_id: internal service id
+        :retval: iterable of dict containing the role information
+        """
         dbcursor = self.database.cursor()
         args = {
             'service_id': service_id,

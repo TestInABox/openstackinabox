@@ -67,16 +67,36 @@ SQL_DELETE_ENDPOINT_URL = '''
 
 
 class KeystoneDbServiceEndpoints(KeystoneDbBase):
+    """
+    Service Endpoint Model
+    """
 
     def __init__(self, master, db):
+        """
+        :param ModelDbBase master: master model for cross-referencing
+        :param sqlite3 db: Sqlite3 database for data storage
+        """
         super(KeystoneDbServiceEndpoints, self).__init__(
             "KeystoneServiceEndpoints", master, db
         )
 
     def initialize(self):
-        pass
+        """
+        Nothing to initialize
+        """
 
     def add(self, service_id, region, version_info, version_list, version_id):
+        """
+        Add an endpoint for an existing service
+
+        :param unicode service_id: internal service id for an existing service
+        :param unicode region: datacenter/region for the services
+        :param unicode version_info: version information
+        :param unicode version_list: version list
+        :param int version_id: version identifier
+        :raises: KeystoneServiceCatalogEndpointError
+        :retval: int - internal endpoint identifier
+        """
         dbcursor = self.database.cursor()
         args = {
             'service_id': service_id,
@@ -111,6 +131,18 @@ class KeystoneDbServiceEndpoints(KeystoneDbBase):
         return endpoint_id
 
     def get(self, service_id, endpoint_id=None):
+        """
+        Access the endpoint data
+
+        :param int service_id: internal service id for the endpoint data
+        :param int endpoint_id: (optional) internal endpoint id
+
+        .. note:: If the endpoint_id is not specified then all of the endpoints
+            are returned.
+
+        :retval: iterable of dictionaries that contain the endpoint
+            information
+        """
         dbcursor = self.database.cursor()
         args = {
             'service_id': service_id
@@ -132,6 +164,13 @@ class KeystoneDbServiceEndpoints(KeystoneDbBase):
             }
 
     def delete(self, service_id, endpoint_id):
+        """
+        Remove the endpoint data
+
+        :param int service_id: internal service id for the endpoint data
+        :param int endpoint_id: internal endpoint id
+        :raises: KeystoneServiceCatalogEndpointError
+        """
         dbcursor = self.database.cursor()
         args = {
             'service_id': service_id,
@@ -147,6 +186,15 @@ class KeystoneDbServiceEndpoints(KeystoneDbBase):
         self.database.commit()
 
     def add_url(self, endpoint_id, name, url):
+        """
+        Add a URL for an endpoint
+
+        :param int endpoint_id: internal endpoint id
+        :param unicode name: name of the URL
+        :param unicode url: URL for the endpoint
+        :raises: KeystoneEndpointUrlError
+        :retval: int - internal endpoint url id
+        """
         dbcursor = self.database.cursor()
         args = {
             'endpoint_id': endpoint_id,
@@ -179,6 +227,18 @@ class KeystoneDbServiceEndpoints(KeystoneDbBase):
         return url_id
 
     def get_url(self, endpoint_id, url_id=None):
+        """
+        Get the URL(s) for the specified endpoint
+
+        :param int endpoint_id: internal endpoint id
+        :param int url_id: (optional) internal endpoint url id
+
+        .. note:: If the url_id is not specified then all of the
+            urls are returned.
+
+        :retval: iterable of dictionaries that contain the endpoint
+            url information.
+        """
         dbcursor = self.database.cursor()
         args = {
             'endpoint_id': endpoint_id
@@ -198,6 +258,13 @@ class KeystoneDbServiceEndpoints(KeystoneDbBase):
             }
 
     def delete_url(self, endpoint_id, url_id):
+        """
+        Remove the url for the specified endpoint
+
+        :param int endpoint_id: internal endpoint id
+        :param int url_id: (optional) internal endpoint url id
+        :raises: KeystoneEndpointUrlError
+        """
         dbcursor = self.database.cursor()
         args = {
             'endpoint_id': endpoint_id,
