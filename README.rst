@@ -14,6 +14,10 @@ Stack-In-A-Box-based OpenStack Services for use with Testing Framesworks
   :target: https://coveralls.io/r/TestInABox/openstackinabox
   :alt: Coverage Status
 
+.. image:: https://badges.gitter.im/TestInABox/community.svg
+  :target: https://gitter.im/TestInABox/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
+  :alt: Gitter
+
 ========
 Overview
 ========
