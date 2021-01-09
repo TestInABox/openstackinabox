@@ -186,7 +186,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
 
             return (201, headers, '')
 
-        except Exception as ex:
+        except Exception:
             self.log_exception('User Add Failure')
             # is 404 correct?
             return (404, headers, 'failed to add user')
@@ -237,7 +237,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
             self.log_debug('Lookup of user id {0} requested'
                            .format(user_id))
 
-        except Exception as ex:  # pragma: no cover
+        except Exception:  # pragma: no cover
             self.log_exception('Failed to get user id from path')
             return (400, headers, 'bad request')
 
@@ -293,7 +293,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
             user_id = KeystoneV2ServiceUsers.get_user_id_from_path(uri)
             self.log_debug('Lookup of user id {0} requested'.format(user_id))
 
-        except Exception as ex:  # pragma: no cover
+        except Exception:  # pragma: no cover
             self.log_exception('Failed to get user id from path')
             return (400, headers, 'bad request')
 
@@ -313,7 +313,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
                 tenant_id=user_data['tenantid'],
                 user_id=user_id
             )
-        except Exception as ex:
+        except Exception:
             self.log_exception('failed to get user data')
             return (404, headers, 'Not Found')
 
@@ -335,7 +335,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
                 apikey=user_info['apikey'],
                 enabled=user_info['enabled']
             )
-        except Exception as ex:  # pragma: no cover
+        except Exception:  # pragma: no cover
             self.log_exception('failed to update user')
             return (503, headers, 'Server error')
 
@@ -367,7 +367,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
             self.log_debug('Lookup of user id {0} requested'
                            .format(user_id))
 
-        except Exception as ex:  # pragma: no cover
+        except Exception:  # pragma: no cover
             self.log_exception('Failed to get user id from path')
             return (400, headers, 'bad request')
 
@@ -376,7 +376,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
                 tenant_id=user_data['tenantid'],
                 user_id=user_id
             )
-        except Exception as ex:
+        except Exception:
             self.log_exception('failed to get user data')
             return (404, headers, 'Not Found')
 
@@ -386,7 +386,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
                 user_id=user_id
             )
 
-        except Exception as ex:  # pragma: no cover
+        except Exception:  # pragma: no cover
             self.log_exception('failed to delete user')
             return (503, headers, 'Server error')
 
@@ -428,7 +428,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
             user_id = KeystoneV2ServiceUsers.get_user_id_from_path(uri)
             self.log_debug('Lookup of user id {0} requested'.format(user_id))
 
-        except Exception as ex:  # pragma: no cover
+        except Exception:  # pragma: no cover
             self.log_exception('Failed to get user id from path')
             return (400, headers, 'bad request')
 
@@ -457,7 +457,7 @@ class KeystoneV2ServiceUsers(KeystoneV2ServiceBase):
                 enabled=user_info['enabled']
             )
 
-        except Exception as ex:  # pragma: no cover
+        except Exception:  # pragma: no cover
             self.log_exception('failed to update user')
             return (503, headers, 'Server error')
 

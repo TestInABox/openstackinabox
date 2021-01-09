@@ -1,0 +1,3 @@
+setuptools>=1.1.6
+pycodestyle
+flake8

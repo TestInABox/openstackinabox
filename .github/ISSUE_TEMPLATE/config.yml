@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Ask the Community
+    url: https://gitter.im/TestInABox/community
+    about: Join the Test-In-A-Box Gitter Discussion

@@ -8,11 +8,11 @@ from openstackinabox.services.keystone.v2 import exceptions
 class KeystoneV2ServiceBase(BaseService):
 
     # USER_ID_PATH_REGEX = re.compile('^\/users\/[a-zA-Z]+[\w\.@-]*$')
-    USER_ID_REGEX = '([0-9]+)'
-    USER_ID_PATH_REGEX = re.compile('^\/users\/{0}$'
+    USER_ID_REGEX = r'([0-9]+)'
+    USER_ID_PATH_REGEX = re.compile(r'^\/users\/{0}$'
                                     .format(USER_ID_REGEX))
     USER_ID_KSADM_CREDENTIAL_PATH_REGEX = re.compile(
-        '^\/users\/{0}/OS-KSADM/credentials$'
+        r'^\/users\/{0}/OS-KSADM/credentials$'
         .format(USER_ID_REGEX))
 
     @staticmethod
@@ -74,7 +74,7 @@ class KeystoneV2ServiceBase(BaseService):
                     user_data['userid']
                 )
             )
-        except Exception as ex:
+        except Exception:
             self.log_exception('invalid or expired auth token')
             raise exceptions.KeystoneV2AuthUnauthorizedError(
                 'invalid or expired auth token'

@@ -57,7 +57,7 @@ class TestHttprettySwift(unittest.TestCase):
             path += '/{0}'.format(last_word)
 
         data = SwiftV1Service.URL_REGEX.match(path)
-        if container_count is 0:
+        if container_count == 0:
             self.assertIsNone(data)
         else:
             self.assertIsNotNone(data)
@@ -103,7 +103,7 @@ class TestHttprettySwift(unittest.TestCase):
         self.assertEqual(len(uri_data), 3)
 
         tenant_id, container, object_name = uri_data
-        if container_count is 0:
+        if container_count == 0:
             self.assertIsNone(tenant_id)
             self.assertIsNone(container)
             self.assertIsNone(object_name)

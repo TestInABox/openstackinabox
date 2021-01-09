@@ -17,7 +17,7 @@ class KeystoneDbBase(ModelDbBase):
 
     def validate_username(self, username):
         self.log_debug('Validating username {0}'.format(username))
-        regex = re.compile('^[a-zA-Z]+[\w\.@-]*$')
+        regex = re.compile(r'^[a-zA-Z]+[\w\.@-]*$')
         if regex.match(username) is None:
             self.log_debug('Username {0} is INVALID'.format(username))
             return False
@@ -27,7 +27,7 @@ class KeystoneDbBase(ModelDbBase):
 
     def validate_tenant_name(self, tenant_name):
         self.log_debug('Validating tenant name {0}'.format(tenant_name))
-        regex = re.compile('^[a-zA-Z]+[\w\.@-]*$')
+        regex = re.compile(r'^[a-zA-Z]+[\w\.@-]*$')
         if regex.match(tenant_name) is None:
             self.log_debug('tenant name {0} is INVALID'.format(tenant_name))
             return False
@@ -47,10 +47,10 @@ class KeystoneDbBase(ModelDbBase):
     def validate_password(self, password):
         self.log_debug('Validating password {0}'.format(password))
         regexes = [
-            re.compile('^[a-zA-Z]+[\w\.@-]*$'),
-            re.compile('[\w\W]*[A-Z]+'),
-            re.compile('[\w\W]*[a-z]+'),
-            re.compile('[\w\W]*[0-9]+')
+            re.compile(r'^[a-zA-Z]+[\w\.@-]*$'),
+            re.compile(r'[\w\W]*[A-Z]+'),
+            re.compile(r'[\w\W]*[a-z]+'),
+            re.compile(r'[\w\W]*[0-9]+')
         ]
 
         for regex in regexes:

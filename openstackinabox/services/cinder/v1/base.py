@@ -58,7 +58,7 @@ class CinderV1ServiceBase(base_service.BaseService):
                     user_data['userid']
                 )
             )
-        except Exception as ex:
+        except Exception:
             self.log_exception('invalid or expired auth token')
             raise exceptions.KeystoneV2AuthUnauthorizedError(
                 'invalid or expired auth token'
