@@ -1,0 +1,45 @@
+name: OpenStack-In-A-Box CI
+
+on: [pull_request]
+
+jobs:
+    lint:
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: true
+            matrix:
+                python-version: [3.9]
+        steps:
+            - uses: actions/checkout@v2
+              with:
+               ref: ${{ github.event.pull_request.head.sha }}
+            - name: Setup Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v2
+              with:
+                python-version: ${{ matrix.python-version }}
+            - name: Install Dependencies 
+              run: pip install tox setuptools virtualenv coveralls --upgrade
+            - name: Run Pep8
+              run: tox -v -e pep8 -- -v
+            - name: Run Flake8
+              run: tox -v -e flake8 -- -v
+
+    test: 
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: true
+            matrix:
+                python-version: [3.6, 3.7, 3.8, 3.9]
+        steps:
+            - uses: actions/checkout@v2
+              with:
+               ref: ${{ github.event.pull_request.head.sha }}
+            - name: Setup Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v2
+              with:
+                python-version: ${{ matrix.python-version }}
+            - name: Install Dependencies 
+              run: pip install tox setuptools virtualenv coveralls --upgrade
+            - name: Run Tox
+              run: tox -v -e py${{ matrix.python-version }} -- -v
+# NOTE: Still need to add coveralls support
