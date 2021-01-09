@@ -373,28 +373,28 @@ class OpenStackServicesManager(object):
                     )
 
         def remove_registrations():
-                total_registrations = len(
-                    self._active_services[
-                        service_name][service_version][
-                            self.SERVICE_REGISTRATIONS]
-                )
+            total_registrations = len(
+                self._active_services[
+                    service_name][service_version][
+                        self.SERVICE_REGISTRATIONS]
+            )
 
-                registrations_to_remove = []
-                for registration_count in range(total_registrations):
-                    remove_region(registration_count)
-                    if not len(self._active_services[
-                        service_name][service_version][
-                            self.SERVICE_REGISTRATIONS][registration_count][
-                                self.SERVICE_ENTRIES_REGIONS]
-                    ):
-                        registrations_to_remove.append(registration_count)
+            registrations_to_remove = []
+            for registration_count in range(total_registrations):
+                remove_region(registration_count)
+                if not len(self._active_services[
+                    service_name][service_version][
+                        self.SERVICE_REGISTRATIONS][registration_count][
+                            self.SERVICE_ENTRIES_REGIONS]
+                ):
+                    registrations_to_remove.append(registration_count)
 
-                registrations_to_remove.reverse()
+            registrations_to_remove.reverse()
 
-                for count in registrations_to_remove:
-                    del self._active_services[
-                        service_name][service_version][
-                            self.SERVICE_REGISTRATIONS][count]
+            for count in registrations_to_remove:
+                del self._active_services[
+                    service_name][service_version][
+                        self.SERVICE_REGISTRATIONS][count]
 
         def remove_version():
             if service_version in self._active_services[service_name]:

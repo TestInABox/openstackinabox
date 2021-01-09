@@ -109,7 +109,7 @@ class TestKeystoneV2AuthPassword(TestKeystoneV2AuthBase):
                     )
                 elif invalid_value_key == 'password':
                     auth_data['auth']['passwordCredentials']['password'] = (
-                        '\ someBadPassword'
+                        r'\ someBadPassword'
                     )
 
             res = requests.post(

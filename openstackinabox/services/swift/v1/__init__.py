@@ -26,7 +26,7 @@ class SwiftV1Service(base_service.BaseService):
     #   [/object/prefix] = (\/[[\.%~#@!&\^\*\(\)\+=\`\'\":;><?\w-]+)+
     #   <object> = (\/.+\Z)
     URL_REGEX = re.compile(
-        '\A(\/\w+)(\/[[\.%~#@!&\^\*\(\)\+=\`\'\":;><?\w-]+)+(\/.+\Z)'
+        r'\A(\/\w+)(\/[[\.%~#@!&\^\*\(\)\+=\`\'\":;><?\w-]+)+(\/.+\Z)'
     )
 
     @staticmethod
@@ -314,7 +314,7 @@ class SwiftV1Service(base_service.BaseService):
                 'Swift Service ({0}): Object Stored'.format(self.__id)
             )
 
-        except Exception as ex:
+        except Exception:
             LOG.exception(
                 'Swift Service ({0}): Failed to store object'.format(self.__id)
             )

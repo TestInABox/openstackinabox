@@ -10,9 +10,9 @@ class CinderV1Volumes(base.CinderV1ServiceBase):
     #   right now for inserting the tenant-id into the URL when
     #   generating the service catalog. So the service URL here
     #   can't search for it
-    ALL_VOLUMES = re.compile('^/volumes$')
-    ALL_VOLUMES_DETAILED = re.compile('^/volumes/detail$')
-    SPECIFIC_VOLUME = re.compile('^/volumes/[\w-]+$')
+    ALL_VOLUMES = re.compile(r'^/volumes$')
+    ALL_VOLUMES_DETAILED = re.compile(r'^/volumes/detail$')
+    SPECIFIC_VOLUME = re.compile(r'^/volumes/[\w-]+$')
 
     def __init__(self, model, keystone_service):
         super(CinderV1Volumes, self).__init__(

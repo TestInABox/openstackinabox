@@ -448,8 +448,9 @@ class SwiftStorage(object):
         self.model.add_object(intTenantId, intContainerId, object_name, path)
 
         LOG.debug(
-            'Swift Service ({0}): Added object to model'.format(
-                self.__id, path
+            'Swift Service ({0}): Added object {1}/{2}/{3}:{4} to model'
+            .format(
+                self.__id, path, tenantid, container_name, object_name
             )
         )
 
@@ -566,7 +567,7 @@ class SwiftStorage(object):
                 )
                 data.seek(0, os.SEEK_SET)
 
-            except Exception as ex:
+            except Exception:
                 LOG.exception('Failed to read object from disk')
                 data = None
 
