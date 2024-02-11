@@ -1,9 +1,9 @@
 coverage
 ddt
 mock
-nose
-nose-exclude
-pep8
+pytest
+pytest-cov
+pycodestyle
 requests
 requests-mock
 six
